@@ -181,36 +181,62 @@ export default function AddStudentScreen() {
     setErrors((e) => ({ ...e, [key]: "" }));
   }
 
-  function onDateChange(_event: DateTimePickerEvent, selected?: Date) {
-    setShowDatePicker(Platform.OS === "ios");
+  function onDateChange(event: DateTimePickerEvent, selected?: Date) {
+    if (Platform.OS !== "ios") {
+      setShowDatePicker(false);
+      if (event.type !== "set") return;
+    }
     if (selected) {
       setDatePickerValue(selected);
       setField("dateOfBirth", formatDateDMY(selected));
     }
   }
 
-  async function pickFile(field: string) {
-    if (IMAGE_FIELDS.has(field)) {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ["images"], quality: 0.85, allowsEditing: false,
+  async function pickImageForField(field: string) {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"], quality: 0.85, allowsEditing: false,
+    });
+    if (!result.canceled && result.assets[0]) {
+      const asset = result.assets[0];
+      const ext = asset.uri.split(".").pop() ?? "jpg";
+      setFiles((f) => ({ ...f, [field]: { uri: asset.uri, name: `${field}.${ext}`, type: asset.mimeType ?? `image/${ext}` } }));
+      setErrors((e) => ({ ...e, [`doc_${field}`]: "" }));
+    }
+  }
+
+  async function pickPdfForField(field: string) {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ["application/pdf", "image/*"],
+        copyToCacheDirectory: true,
       });
-      if (!result.canceled && result.assets[0]) {
+      if (!result.canceled && result.assets?.[0]) {
         const asset = result.assets[0];
-        const ext = asset.uri.split(".").pop() ?? "jpg";
-        setFiles((f) => ({ ...f, [field]: { uri: asset.uri, name: `${field}.${ext}`, type: asset.mimeType ?? `image/${ext}` } }));
+        setFiles((f) => ({ ...f, [field]: { uri: asset.uri, name: asset.name ?? field, type: asset.mimeType ?? "application/pdf" } }));
         setErrors((e) => ({ ...e, [`doc_${field}`]: "" }));
       }
+    } catch {
+      Alert.alert("PDF Picker Unavailable", "Please use 'Pick Image' instead.");
+    }
+  }
+
+  async function pickFile(field: string) {
+    if (IMAGE_FIELDS.has(field)) {
+      await pickImageForField(field);
     } else {
       if (Platform.OS === "web") {
         Alert.alert("Web Mode", "Use the mobile app for document uploads.");
         return;
       }
-      const result = await DocumentPicker.getDocumentAsync({ type: ["application/pdf", "image/*"] });
-      if (!result.canceled && result.assets[0]) {
-        const asset = result.assets[0];
-        setFiles((f) => ({ ...f, [field]: { uri: asset.uri, name: asset.name ?? field, type: asset.mimeType ?? "application/pdf" } }));
-        setErrors((e) => ({ ...e, [`doc_${field}`]: "" }));
-      }
+      Alert.alert(
+        FILE_LABELS[field] ?? "Upload Document",
+        "How would you like to upload?",
+        [
+          { text: "Pick Image from Gallery", onPress: () => pickImageForField(field) },
+          { text: "Pick PDF File", onPress: () => pickPdfForField(field) },
+          { text: "Cancel", style: "cancel" },
+        ]
+      );
     }
   }
 

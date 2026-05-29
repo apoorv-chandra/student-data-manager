@@ -195,34 +195,60 @@ export default function EditStudentScreen() {
     setErrors((e) => ({ ...e, [key]: "" }));
   }
 
-  function onDateChange(_event: DateTimePickerEvent, selected?: Date) {
-    setShowDatePicker(Platform.OS === "ios");
+  function onDateChange(event: DateTimePickerEvent, selected?: Date) {
+    if (Platform.OS !== "ios") {
+      setShowDatePicker(false);
+      if (event.type !== "set") return;
+    }
     if (selected) {
       setDatePickerValue(selected);
       setField("dateOfBirth", formatDateDMY(selected));
     }
   }
 
+  async function pickImageForField(field: string) {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"], quality: 0.85, allowsEditing: false,
+    });
+    if (!result.canceled && result.assets[0]) {
+      const asset = result.assets[0];
+      const ext = asset.uri.split(".").pop() ?? "jpg";
+      setNewFiles((f) => ({ ...f, [field]: { uri: asset.uri, name: `${field}.${ext}`, type: asset.mimeType ?? `image/${ext}` } }));
+    }
+  }
+
+  async function pickPdfForField(field: string) {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ["application/pdf", "image/*"],
+        copyToCacheDirectory: true,
+      });
+      if (!result.canceled && result.assets?.[0]) {
+        const asset = result.assets[0];
+        setNewFiles((f) => ({ ...f, [field]: { uri: asset.uri, name: asset.name ?? field, type: asset.mimeType ?? "application/pdf" } }));
+      }
+    } catch {
+      Alert.alert("PDF Picker Unavailable", "Please use 'Pick Image' instead.");
+    }
+  }
+
   async function pickFile(field: string) {
     if (IMAGE_FIELDS.has(field)) {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ["images"], quality: 0.85, allowsEditing: false,
-      });
-      if (!result.canceled && result.assets[0]) {
-        const asset = result.assets[0];
-        const ext = asset.uri.split(".").pop() ?? "jpg";
-        setNewFiles((f) => ({ ...f, [field]: { uri: asset.uri, name: `${field}.${ext}`, type: asset.mimeType ?? `image/${ext}` } }));
-      }
+      await pickImageForField(field);
     } else {
       if (Platform.OS === "web") {
         Alert.alert("Web Mode", "Use the mobile app for document uploads.");
         return;
       }
-      const result = await DocumentPicker.getDocumentAsync({ type: ["application/pdf", "image/*"] });
-      if (!result.canceled && result.assets[0]) {
-        const asset = result.assets[0];
-        setNewFiles((f) => ({ ...f, [field]: { uri: asset.uri, name: asset.name ?? field, type: asset.mimeType ?? "application/pdf" } }));
-      }
+      Alert.alert(
+        FILE_LABELS[field] ?? "Upload Document",
+        "How would you like to upload?",
+        [
+          { text: "Pick Image from Gallery", onPress: () => pickImageForField(field) },
+          { text: "Pick PDF File", onPress: () => pickPdfForField(field) },
+          { text: "Cancel", style: "cancel" },
+        ]
+      );
     }
   }
 
