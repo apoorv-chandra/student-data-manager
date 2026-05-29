@@ -5,13 +5,13 @@ import { useAuth } from "@/context/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   BookOpen, Users, Plus, LogOut, ToggleLeft, ToggleRight,
-  Copy, Check, AlertCircle, X, User, Mail, Phone, CheckCircle, XCircle,
-  ExternalLink, RefreshCw,
+  Copy, Check, AlertCircle, X, Mail, Phone, CheckCircle, XCircle,
+  ExternalLink, RefreshCw, Trash2, AlertTriangle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function DashboardPage() {
-  const { user, logout } = useAuth();
+  const { user, logout, token } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
 
@@ -24,6 +24,8 @@ export default function DashboardPage() {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [newTeacher, setNewTeacher] = useState<{ teacher: Teacher; tempPassword: string } | null>(null);
   const [copiedPwd, setCopiedPwd] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Teacher | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const teachers = data?.teachers ?? [];
   const activeCount = teachers.filter((t) => t.isActive).length;
@@ -66,6 +68,29 @@ export default function DashboardPage() {
       });
     } catch {
       toast({ title: "Error", description: "Failed to update teacher status", variant: "destructive" });
+    }
+  }
+
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/admin/teachers/${deleteTarget.id}`, {
+        method: "DELETE",
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({ error: "Delete failed" }));
+        toast({ title: "Cannot delete", description: body.error ?? "Delete failed", variant: "destructive" });
+        return;
+      }
+      qc.invalidateQueries({ queryKey: ["listTeachers"] });
+      toast({ title: "Teacher deleted", description: `${deleteTarget.name} has been removed.` });
+      setDeleteTarget(null);
+    } catch {
+      toast({ title: "Error", description: "Network error — could not delete teacher.", variant: "destructive" });
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -177,6 +202,7 @@ export default function DashboardPage() {
                   key={teacher.id}
                   teacher={teacher}
                   onToggle={() => handleToggle(teacher)}
+                  onDelete={() => setDeleteTarget(teacher)}
                   isToggling={toggleMutation.isPending}
                 />
               ))}
@@ -252,6 +278,9 @@ export default function DashboardPage() {
               <div>
                 <p className="font-semibold text-gray-900">{newTeacher.teacher.name}</p>
                 <p className="text-sm text-gray-500">{newTeacher.teacher.email}</p>
+                {newTeacher.teacher.googleSheetUrl && (
+                  <p className="text-xs text-green-600 mt-0.5">Google Sheet tab created</p>
+                )}
               </div>
             </div>
 
@@ -282,11 +311,57 @@ export default function DashboardPage() {
           </div>
         </Modal>
       )}
+
+      {/* Delete confirmation modal */}
+      {deleteTarget && (
+        <Modal title="Delete Teacher" onClose={() => !isDeleting && setDeleteTarget(null)}>
+          <div className="space-y-5">
+            <div className="flex items-start gap-4 p-4 bg-red-50 rounded-xl border border-red-100">
+              <AlertTriangle className="w-6 h-6 text-red-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Delete {deleteTarget.name}?</p>
+                <p className="text-sm text-gray-600 mt-1">
+                  This will permanently remove their account. Their Google Sheet tab will remain.
+                </p>
+                {(deleteTarget.studentCount ?? 0) > 0 && (
+                  <p className="text-sm text-red-600 font-medium mt-2">
+                    This teacher has {deleteTarget.studentCount} student record{(deleteTarget.studentCount ?? 0) > 1 ? "s" : ""}.
+                    You must delete all their students first.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                disabled={isDeleting}
+                className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting || (deleteTarget.studentCount ?? 0) > 0}
+                className="flex-1 py-2.5 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+              >
+                {isDeleting ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <><Trash2 className="w-4 h-4" />Delete Teacher</>
+                )}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
 
-function TeacherRow({ teacher, onToggle, isToggling }: { teacher: Teacher; onToggle: () => void; isToggling: boolean }) {
+function TeacherRow({ teacher, onToggle, onDelete, isToggling }: {
+  teacher: Teacher; onToggle: () => void; onDelete: () => void; isToggling: boolean;
+}) {
   return (
     <div className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors">
       <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
@@ -309,20 +384,20 @@ function TeacherRow({ teacher, onToggle, isToggling }: { teacher: Teacher; onTog
             <Phone className="w-3 h-3" />{teacher.mobile}
           </span>
           <span className="text-xs text-gray-400">{teacher.studentCount ?? 0} students</span>
+          {teacher.googleSheetUrl && (
+            <span className="hidden sm:inline-flex items-center gap-1 text-xs text-green-600 font-medium">
+              <CheckCircle className="w-3 h-3" /> Sheet ready
+            </span>
+          )}
         </div>
       </div>
-      <div className="flex items-center gap-2 flex-shrink-0">
-        {teacher.googleSheetUrl && (
-          <span className="hidden sm:inline-flex items-center gap-1 text-xs text-green-600 bg-green-50 border border-green-200 px-2 py-1 rounded-md font-medium">
-            <CheckCircle className="w-3 h-3" /> Sheet tab ready
-          </span>
-        )}
+      <div className="flex items-center gap-1 flex-shrink-0">
         <button
           onClick={onToggle}
           disabled={isToggling}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
             teacher.isActive
-              ? "text-red-600 hover:bg-red-50"
+              ? "text-orange-600 hover:bg-orange-50"
               : "text-green-600 hover:bg-green-50"
           } disabled:opacity-50`}
         >
@@ -331,6 +406,13 @@ function TeacherRow({ teacher, onToggle, isToggling }: { teacher: Teacher; onTog
           ) : (
             <><ToggleLeft className="w-4 h-4" />Activate</>
           )}
+        </button>
+        <button
+          onClick={onDelete}
+          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          title="Delete teacher"
+        >
+          <Trash2 className="w-4 h-4" />
         </button>
       </div>
     </div>

@@ -99,6 +99,26 @@ router.post("/", async (req, res) => {
   });
 });
 
+router.delete("/:id", async (req, res) => {
+  const teacher = await Teacher.findOne({ _id: req.params["id"], role: "teacher" });
+  if (!teacher) {
+    res.status(404).json({ error: "Teacher not found" });
+    return;
+  }
+
+  const studentCount = await Student.countDocuments({ teacherId: teacher._id });
+  if (studentCount > 0) {
+    res.status(409).json({
+      error: `Cannot delete: teacher has ${studentCount} student record${studentCount > 1 ? "s" : ""}. Delete all their students first.`,
+      studentCount,
+    });
+    return;
+  }
+
+  await Teacher.findByIdAndDelete(teacher._id);
+  res.json({ message: "Teacher deleted successfully" });
+});
+
 router.patch("/:id/status", async (req, res) => {
   const { isActive } = req.body;
   if (typeof isActive !== "boolean") {
