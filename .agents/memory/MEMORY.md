@@ -1,0 +1,2 @@
+- [API Server Build Quirks](api-server-build-quirks.md) — esbuild/ESM pitfalls for this project's Express+Mongoose server
+- [OpenAPI Schema Naming](openapi-schema-naming.md) — schema names must be entity-shaped, not operation-shaped, to avoid codegen collisions

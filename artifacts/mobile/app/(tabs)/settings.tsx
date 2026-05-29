@@ -1,0 +1,167 @@
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  ScrollView,
+  TextInput,
+  ActivityIndicator,
+  Linking,
+  Platform,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Feather } from "@expo/vector-icons";
+import { useAuth } from "@/context/AuthContext";
+import { useColors } from "@/hooks/useColors";
+import { useGetSettings } from "@workspace/api-client-react";
+
+export default function SettingsScreen() {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const { user, logout } = useAuth();
+
+  const { data: settings } = useGetSettings();
+
+  function handleLogout() {
+    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Sign Out", style: "destructive", onPress: logout },
+    ]);
+  }
+
+  function openSheet() {
+    if (settings?.googleSheetUrl) {
+      Linking.openURL(settings.googleSheetUrl);
+    }
+  }
+
+  const topInset = Platform.OS === "web" ? 67 : insets.top;
+
+  return (
+    <ScrollView
+      style={{ flex: 1, backgroundColor: colors.background }}
+      contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
+    >
+      <View style={[styles.header, { paddingTop: topInset + 12, backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+        <Text style={[styles.headerTitle, { color: colors.foreground }]}>Settings</Text>
+      </View>
+
+      <View style={styles.content}>
+        {/* Profile section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>PROFILE</Text>
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.profileRow}>
+              <View style={[styles.avatar, { backgroundColor: colors.accent }]}>
+                <Text style={[styles.avatarText, { color: colors.primary }]}>
+                  {(user?.name ?? "?").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
+                </Text>
+              </View>
+              <View style={styles.profileInfo}>
+                <Text style={[styles.profileName, { color: colors.foreground }]}>{user?.name}</Text>
+                <Text style={[styles.profileEmail, { color: colors.mutedForeground }]}>{user?.email}</Text>
+                <View style={[styles.roleBadge, { backgroundColor: user?.role === "superadmin" ? colors.accent : colors.muted }]}>
+                  <Text style={[styles.roleText, { color: user?.role === "superadmin" ? colors.primary : colors.mutedForeground }]}>
+                    {user?.role === "superadmin" ? "Super Admin" : "Teacher"}
+                  </Text>
+                </View>
+              </View>
+            </View>
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
+            <View style={styles.infoRow}>
+              <Feather name="phone" size={14} color={colors.mutedForeground} />
+              <Text style={[styles.infoText, { color: colors.mutedForeground }]}>{user?.mobile}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Google Sheets */}
+        {settings?.googleSheetUrl ? (
+          <View style={styles.section}>
+            <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>GOOGLE SHEETS</Text>
+            <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={styles.sheetRow}>
+                <View style={[styles.sheetIcon, { backgroundColor: "#E7F3E8" }]}>
+                  <Feather name="grid" size={18} color="#1E7E34" />
+                </View>
+                <View style={styles.sheetInfo}>
+                  <Text style={[styles.sheetLabel, { color: colors.foreground }]}>Data Sheet</Text>
+                  <Text style={[styles.sheetSub, { color: colors.mutedForeground }]}>Auto-synced with student records</Text>
+                </View>
+                <TouchableOpacity
+                  style={[styles.openBtn, { backgroundColor: colors.accent }]}
+                  onPress={openSheet}
+                >
+                  <Feather name="external-link" size={14} color={colors.primary} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.section}>
+            <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>GOOGLE SHEETS</Text>
+            <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={styles.sheetRow}>
+                <View style={[styles.sheetIcon, { backgroundColor: colors.muted }]}>
+                  <Feather name="grid" size={18} color={colors.mutedForeground} />
+                </View>
+                <View style={styles.sheetInfo}>
+                  <Text style={[styles.sheetLabel, { color: colors.foreground }]}>Sheet Not Created</Text>
+                  <Text style={[styles.sheetSub, { color: colors.mutedForeground }]}>
+                    Will be created automatically when you add your first student
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Account actions */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>ACCOUNT</Text>
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
+              <Feather name="log-out" size={18} color={colors.destructive} />
+              <Text style={[styles.menuItemText, { color: colors.destructive }]}>Sign Out</Text>
+              <Feather name="chevron-right" size={16} color={colors.destructive} style={{ marginLeft: "auto" }} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  header: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+  },
+  headerTitle: { fontSize: 26, fontWeight: "700", fontFamily: "Inter_700Bold" },
+  content: { padding: 16, gap: 24 },
+  section: { gap: 8 },
+  sectionLabel: { fontSize: 11, fontFamily: "Inter_600SemiBold", fontWeight: "600", letterSpacing: 0.8, paddingLeft: 4 },
+  card: { borderRadius: 14, borderWidth: 1, overflow: "hidden", shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
+  profileRow: { flexDirection: "row", alignItems: "center", padding: 16, gap: 14 },
+  avatar: { width: 52, height: 52, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  avatarText: { fontSize: 20, fontWeight: "700", fontFamily: "Inter_700Bold" },
+  profileInfo: { flex: 1, gap: 4 },
+  profileName: { fontSize: 17, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
+  profileEmail: { fontSize: 13, fontFamily: "Inter_400Regular" },
+  roleBadge: { alignSelf: "flex-start", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20, marginTop: 4 },
+  roleText: { fontSize: 11, fontFamily: "Inter_600SemiBold", fontWeight: "600" },
+  divider: { height: 1, marginHorizontal: 16 },
+  infoRow: { flexDirection: "row", alignItems: "center", gap: 8, padding: 14, paddingHorizontal: 16 },
+  infoText: { fontSize: 14, fontFamily: "Inter_400Regular" },
+  sheetRow: { flexDirection: "row", alignItems: "center", gap: 12, padding: 16 },
+  sheetIcon: { width: 40, height: 40, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  sheetInfo: { flex: 1, gap: 2 },
+  sheetLabel: { fontSize: 15, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
+  sheetSub: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  openBtn: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  menuItem: { flexDirection: "row", alignItems: "center", gap: 12, padding: 16 },
+  menuItemText: { fontSize: 15, fontFamily: "Inter_500Medium", fontWeight: "500" },
+});

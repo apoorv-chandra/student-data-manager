@@ -1,22 +1,31 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Student Data Collection API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: students
+    description: Student records
+  - name: files
+    description: File operations
+  - name: admin
+    description: Super admin operations
+  - name: settings
+    description: App settings
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +33,643 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Teacher or super admin login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginCredentials"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResult"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/set-password:
+    post:
+      operationId: setPassword
+      tags: [auth]
+      summary: Set password (first login or change password)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordUpdate"
+      responses:
+        "200":
+          description: Password updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user info
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeacherProfile"
+
+  /students:
+    get:
+      operationId: listStudents
+      tags: [students]
+      summary: List students with pagination and search
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Paginated student list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudentListResponse"
+    post:
+      operationId: createStudent
+      tags: [students]
+      summary: Create a new student record with files
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/CreateStudentRequest"
+      responses:
+        "201":
+          description: Student created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Student"
+
+  /students/{id}:
+    get:
+      operationId: getStudent
+      tags: [students]
+      summary: Get student by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Student record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Student"
+    patch:
+      operationId: updateStudent
+      tags: [students]
+      summary: Update student record
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/UpdateStudentRequest"
+      responses:
+        "200":
+          description: Updated student
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Student"
+    delete:
+      operationId: deleteStudent
+      tags: [students]
+      summary: Delete student record
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /students/{id}/zip:
+    get:
+      operationId: downloadStudentZip
+      tags: [files]
+      summary: Download all student files as ZIP
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ZIP file
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+
+  /files/{fileId}:
+    get:
+      operationId: downloadFile
+      tags: [files]
+      summary: Download a single file
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: File content
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+
+  /admin/teachers:
+    get:
+      operationId: listTeachers
+      tags: [admin]
+      summary: List all teachers
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Teacher list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeacherListResponse"
+    post:
+      operationId: createTeacher
+      tags: [admin]
+      summary: Create a new teacher account
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTeacherRequest"
+      responses:
+        "201":
+          description: Teacher created with temp password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateTeacherResponse"
+
+  /admin/teachers/{id}/status:
+    patch:
+      operationId: toggleTeacherStatus
+      tags: [admin]
+      summary: Toggle teacher active/inactive
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ToggleStatusRequest"
+      responses:
+        "200":
+          description: Status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Teacher"
+
+  /settings:
+    get:
+      operationId: getSettings
+      tags: [settings]
+      summary: Get current teacher settings (sheet URL etc)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeacherSettings"
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   schemas:
     HealthStatus:
       type: object
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required: [message]
+
+    LoginCredentials:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required: [email, password]
+
+    AuthResult:
+      type: object
+      properties:
+        token:
+          type: string
+        teacher:
+          $ref: "#/components/schemas/TeacherProfile"
+        requiresPasswordChange:
+          type: boolean
+      required: [token, teacher, requiresPasswordChange]
+
+    PasswordUpdate:
+      type: object
+      properties:
+        newPassword:
+          type: string
+          minLength: 6
+      required: [newPassword]
+
+    TeacherProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        mobile:
+          type: string
+        role:
+          type: string
+          enum: [teacher, superadmin]
+        isActive:
+          type: boolean
+        googleSheetUrl:
+          type: string
+          nullable: true
+      required: [id, name, email, mobile, role, isActive]
+
+    Teacher:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        mobile:
+          type: string
+        role:
+          type: string
+        isActive:
+          type: boolean
+        googleSheetUrl:
+          type: string
+          nullable: true
+        studentCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, name, email, mobile, role, isActive, createdAt]
+
+    TeacherListResponse:
+      type: object
+      properties:
+        teachers:
+          type: array
+          items:
+            $ref: "#/components/schemas/Teacher"
+        total:
+          type: integer
+      required: [teachers, total]
+
+    CreateTeacherRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        mobile:
+          type: string
+      required: [name, email, mobile]
+
+    CreateTeacherResponse:
+      type: object
+      properties:
+        teacher:
+          $ref: "#/components/schemas/Teacher"
+        tempPassword:
+          type: string
+      required: [teacher, tempPassword]
+
+    ToggleStatusRequest:
+      type: object
+      properties:
+        isActive:
+          type: boolean
+      required: [isActive]
+
+    StudentFile:
+      type: object
+      properties:
+        fileId:
+          type: string
+        originalName:
+          type: string
+        mimeType:
+          type: string
+        size:
+          type: integer
+      required: [fileId, originalName, mimeType, size]
+
+    Student:
+      type: object
+      properties:
+        id:
+          type: string
+        teacherId:
+          type: string
+        name:
+          type: string
+        fathersName:
+          type: string
+        dateOfBirth:
+          type: string
+        tenthPassYear:
+          type: string
+        twelfthPassYear:
+          type: string
+        mobile:
+          type: string
+        email:
+          type: string
+        isPendingSync:
+          type: boolean
+        googleSheetRowIndex:
+          type: integer
+          nullable: true
+        files:
+          $ref: "#/components/schemas/StudentFiles"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, teacherId, name, fathersName, dateOfBirth, tenthPassYear, twelfthPassYear, mobile, email, createdAt, updatedAt]
+
+    StudentFiles:
+      type: object
+      properties:
+        photo:
+          $ref: "#/components/schemas/StudentFile"
+          nullable: true
+        signature:
+          $ref: "#/components/schemas/StudentFile"
+          nullable: true
+        tenthMarksheet:
+          $ref: "#/components/schemas/StudentFile"
+          nullable: true
+        twelfthMarksheet:
+          $ref: "#/components/schemas/StudentFile"
+          nullable: true
+        graduationMarksheet:
+          $ref: "#/components/schemas/StudentFile"
+          nullable: true
+        pgMarksheet:
+          $ref: "#/components/schemas/StudentFile"
+          nullable: true
+        incomeCertificate:
+          $ref: "#/components/schemas/StudentFile"
+          nullable: true
+        casteCertificate:
+          $ref: "#/components/schemas/StudentFile"
+          nullable: true
+        domicileCertificate:
+          $ref: "#/components/schemas/StudentFile"
+          nullable: true
+        affidavit:
+          $ref: "#/components/schemas/StudentFile"
+          nullable: true
+        aadhaarFront:
+          $ref: "#/components/schemas/StudentFile"
+          nullable: true
+        aadhaarBack:
+          $ref: "#/components/schemas/StudentFile"
+          nullable: true
+
+    StudentListResponse:
+      type: object
+      properties:
+        students:
+          type: array
+          items:
+            $ref: "#/components/schemas/Student"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+        totalPages:
+          type: integer
+      required: [students, total, page, limit, totalPages]
+
+    CreateStudentRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        fathersName:
+          type: string
+        dateOfBirth:
+          type: string
+        tenthPassYear:
+          type: string
+        twelfthPassYear:
+          type: string
+        mobile:
+          type: string
+        email:
+          type: string
+        photo:
+          type: string
+        signature:
+          type: string
+        tenthMarksheet:
+          type: string
+        twelfthMarksheet:
+          type: string
+        graduationMarksheet:
+          type: string
+        pgMarksheet:
+          type: string
+        incomeCertificate:
+          type: string
+        casteCertificate:
+          type: string
+        domicileCertificate:
+          type: string
+        affidavit:
+          type: string
+        aadhaarFront:
+          type: string
+        aadhaarBack:
+          type: string
+      required: [name, fathersName, dateOfBirth, tenthPassYear, twelfthPassYear, mobile, email]
+
+    UpdateStudentRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        fathersName:
+          type: string
+        dateOfBirth:
+          type: string
+        tenthPassYear:
+          type: string
+        twelfthPassYear:
+          type: string
+        mobile:
+          type: string
+        email:
+          type: string
+        photo:
+          type: string
+        signature:
+          type: string
+        tenthMarksheet:
+          type: string
+        twelfthMarksheet:
+          type: string
+        graduationMarksheet:
+          type: string
+        pgMarksheet:
+          type: string
+        incomeCertificate:
+          type: string
+        casteCertificate:
+          type: string
+        domicileCertificate:
+          type: string
+        affidavit:
+          type: string
+        aadhaarFront:
+          type: string
+        aadhaarBack:
+          type: string
+
+    TeacherSettings:
+      type: object
+      properties:
+        googleSheetUrl:
+          type: string
+          nullable: true
+        googleSheetId:
+          type: string
+          nullable: true
+      required: []
