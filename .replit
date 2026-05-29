@@ -18,3 +18,18 @@ expertMode = true
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 20000
+
+[[ports]]
+localPort = 8080
+externalPort = 80
+
+[[ports]]
+localPort = 8081
+externalPort = 8081
+
+[userenv]
+
+[userenv.shared]
+SHEET_ADMIN_EMAIL = "info@noratech.in"
+SHEET_COMMENTOR_EMAIL = "sdn3175@gmail.com"
+NODE_ENV = "development"
