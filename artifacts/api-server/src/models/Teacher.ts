@@ -11,6 +11,7 @@ const teacherSchema = new mongoose.Schema(
     requiresPasswordChange: { type: Boolean, default: true },
     googleSheetId: { type: String, default: null },
     googleSheetUrl: { type: String, default: null },
+    googleSheetTabName: { type: String, default: null },
   },
   { timestamps: true }
 );

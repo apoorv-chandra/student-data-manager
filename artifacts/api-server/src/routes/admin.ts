@@ -3,13 +3,13 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { Teacher } from "../models/Teacher";
 import { Student } from "../models/Student";
-import { requireAuth } from "../middlewares/auth";
-import { requireSuperAdmin } from "../middlewares/auth";
+import { requireAuth, requireSuperAdmin } from "../middlewares/auth";
+import { addTeacherTab, getMasterSheetUrl } from "../lib/sheets";
+import { logger } from "../lib/logger";
 
 const router = Router();
 router.use(requireAuth, requireSuperAdmin);
 
-// List all teachers with student counts
 router.get("/", async (_req, res) => {
   const teachers = await Teacher.find({ role: "teacher" }).lean();
   const teacherIds = teachers.map((t) => t._id);
@@ -19,6 +19,8 @@ router.get("/", async (_req, res) => {
   ]);
   const countMap: Record<string, number> = {};
   for (const c of counts) countMap[c._id.toString()] = c.count;
+
+  const masterSheetUrl = await getMasterSheetUrl().catch(() => null);
 
   res.json({
     teachers: teachers.map((t) => ({
@@ -33,10 +35,10 @@ router.get("/", async (_req, res) => {
       createdAt: t.createdAt,
     })),
     total: teachers.length,
+    masterSheetUrl,
   });
 });
 
-// Create a teacher
 router.post("/", async (req, res) => {
   const { name, email, mobile } = req.body;
   if (!name || !email || !mobile) {
@@ -67,6 +69,20 @@ router.post("/", async (req, res) => {
     requiresPasswordChange: true,
   });
 
+  let sheetUrl: string | null = null;
+  try {
+    const result = await addTeacherTab(name);
+    await Teacher.findByIdAndUpdate(teacher._id, {
+      googleSheetId: result.spreadsheetId,
+      googleSheetUrl: result.url,
+      googleSheetTabName: result.tabName,
+    });
+    sheetUrl = result.url;
+    logger.info({ teacherId: teacher._id, tabName: result.tabName }, "Teacher sheet tab created");
+  } catch (e) {
+    logger.error({ err: e }, "Failed to create Google Sheet tab for teacher");
+  }
+
   res.status(201).json({
     teacher: {
       id: teacher._id.toString(),
@@ -75,7 +91,7 @@ router.post("/", async (req, res) => {
       mobile: teacher.mobile,
       role: teacher.role,
       isActive: teacher.isActive,
-      googleSheetUrl: null,
+      googleSheetUrl: sheetUrl,
       studentCount: 0,
       createdAt: teacher.createdAt,
     },
@@ -83,7 +99,6 @@ router.post("/", async (req, res) => {
   });
 });
 
-// Toggle teacher active/inactive
 router.patch("/:id/status", async (req, res) => {
   const { isActive } = req.body;
   if (typeof isActive !== "boolean") {
