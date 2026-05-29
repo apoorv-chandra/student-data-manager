@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Feather } from "@expo/vector-icons";
+import { Search, Plus, Paperclip, ChevronRight, ChevronLeft, WifiOff, Users } from "lucide-react-native";
 import { useListStudents } from "@workspace/api-client-react";
 import type { Student } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
@@ -87,12 +87,12 @@ export default function StudentsScreen() {
         </View>
         <View style={styles.studentRight}>
           <View style={[styles.fileBadge, { backgroundColor: fileCount > 0 ? colors.accent : colors.muted }]}>
-            <Feather name="paperclip" size={11} color={fileCount > 0 ? colors.primary : colors.mutedForeground} />
+            <Paperclip size={11} color={fileCount > 0 ? colors.primary : colors.mutedForeground} />
             <Text style={[styles.fileBadgeText, { color: fileCount > 0 ? colors.primary : colors.mutedForeground }]}>
               {fileCount}/12
             </Text>
           </View>
-          <Feather name="chevron-right" size={18} color={colors.mutedForeground} style={{ marginTop: 8 }} />
+          <ChevronRight size={18} color={colors.mutedForeground} style={{ marginTop: 8 }} />
         </View>
       </TouchableOpacity>
     );
@@ -115,12 +115,12 @@ export default function StudentsScreen() {
             onPress={() => router.push("/student/add")}
             testID="add-student-btn"
           >
-            <Feather name="plus" size={20} color="#fff" />
+            <Plus size={20} color="#fff" />
           </TouchableOpacity>
         </View>
 
         <View style={[styles.searchBar, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-          <Feather name="search" size={16} color={colors.mutedForeground} />
+          <Search size={16} color={colors.mutedForeground} />
           <TextInput
             style={[styles.searchInput, { color: colors.foreground }]}
             value={search}
@@ -139,7 +139,7 @@ export default function StudentsScreen() {
         </View>
       ) : isError ? (
         <View style={styles.centered}>
-          <Feather name="wifi-off" size={40} color={colors.mutedForeground} />
+          <WifiOff size={40} color={colors.mutedForeground} />
           <Text style={[styles.emptyTitle, { color: colors.foreground }]}>Connection Error</Text>
           <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>Check your internet and try again</Text>
           <TouchableOpacity style={[styles.retryBtn, { backgroundColor: colors.primary }]} onPress={() => refetch()}>
@@ -160,7 +160,7 @@ export default function StudentsScreen() {
           scrollEnabled={!!students.length}
           ListEmptyComponent={
             <View style={styles.centered}>
-              <Feather name="users" size={48} color={colors.mutedForeground} />
+              <Users size={48} color={colors.mutedForeground} />
               <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
                 {debouncedSearch ? "No results found" : "No students yet"}
               </Text>
@@ -177,7 +177,7 @@ export default function StudentsScreen() {
                   onPress={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page <= 1}
                 >
-                  <Feather name="chevron-left" size={18} color={colors.foreground} />
+                  <ChevronLeft size={18} color={colors.foreground} />
                 </TouchableOpacity>
                 <Text style={[styles.pageText, { color: colors.mutedForeground }]}>
                   Page {page} of {totalPages}
@@ -187,7 +187,7 @@ export default function StudentsScreen() {
                   onPress={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page >= totalPages}
                 >
-                  <Feather name="chevron-right" size={18} color={colors.foreground} />
+                  <ChevronRight size={18} color={colors.foreground} />
                 </TouchableOpacity>
               </View>
             ) : null
@@ -200,87 +200,23 @@ export default function StudentsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    gap: 12,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  headerTitle: {
-    fontSize: 26,
-    fontWeight: "700",
-    fontFamily: "Inter_700Bold",
-  },
-  headerSub: {
-    fontSize: 13,
-    fontFamily: "Inter_400Regular",
-    marginTop: 2,
-  },
-  addBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 10,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    height: 42,
-    gap: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    fontFamily: "Inter_400Regular",
-  },
+  header: { paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1, gap: 12 },
+  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  headerTitle: { fontSize: 26, fontWeight: "700", fontFamily: "Inter_700Bold" },
+  headerSub: { fontSize: 13, fontFamily: "Inter_400Regular", marginTop: 2 },
+  addBtn: { width: 42, height: 42, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  searchBar: { flexDirection: "row", alignItems: "center", borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, height: 42, gap: 8 },
+  searchInput: { flex: 1, fontSize: 15, fontFamily: "Inter_400Regular" },
   list: { paddingHorizontal: 16, paddingTop: 12, gap: 10 },
   listEmpty: { flex: 1 },
-  studentCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: 12,
-    shadowColor: "#000",
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarText: {
-    fontSize: 18,
-    fontWeight: "700",
-    fontFamily: "Inter_700Bold",
-  },
+  studentCard: { flexDirection: "row", alignItems: "center", padding: 14, borderRadius: 12, borderWidth: 1, gap: 12, shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
+  avatar: { width: 46, height: 46, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  avatarText: { fontSize: 18, fontWeight: "700", fontFamily: "Inter_700Bold" },
   studentInfo: { flex: 1, gap: 2 },
   studentName: { fontSize: 15, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
   studentSub: { fontSize: 12, fontFamily: "Inter_400Regular" },
   studentRight: { alignItems: "flex-end" },
-  fileBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 20,
-  },
+  fileBadge: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 20 },
   fileBadgeText: { fontSize: 11, fontFamily: "Inter_500Medium", fontWeight: "500" },
   centered: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, paddingTop: 80 },
   emptyTitle: { fontSize: 18, fontWeight: "600", fontFamily: "Inter_600SemiBold", textAlign: "center" },

@@ -12,7 +12,10 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Feather } from "@expo/vector-icons";
+import {
+  AlertCircle, Pencil, Download, FileText, File, Trash2,
+  User, Calendar, Phone, Mail, Award,
+} from "lucide-react-native";
 import { useGetStudent, useDeleteStudent } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 import { useQueryClient } from "@tanstack/react-query";
@@ -55,8 +58,7 @@ export default function StudentDetailScreen() {
   }
 
   async function openFile(fileId: string) {
-    const url = getFileUrl(fileId);
-    Linking.openURL(url);
+    Linking.openURL(getFileUrl(fileId));
   }
 
   async function downloadZip() {
@@ -97,7 +99,7 @@ export default function StudentDetailScreen() {
   if (isError || !student) {
     return (
       <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <Feather name="alert-circle" size={40} color={colors.destructive} />
+        <AlertCircle size={40} color={colors.destructive} />
         <Text style={[styles.errorTitle, { color: colors.foreground }]}>Student not found</Text>
         <TouchableOpacity style={[styles.retryBtn, { backgroundColor: colors.primary }]} onPress={() => router.back()}>
           <Text style={styles.retryBtnText}>Go back</Text>
@@ -128,7 +130,7 @@ export default function StudentDetailScreen() {
             style={[styles.bannerBtn, { backgroundColor: "rgba(255,255,255,0.2)" }]}
             onPress={() => router.push(`/student/edit/${id}`)}
           >
-            <Feather name="edit-2" size={16} color="#fff" />
+            <Pencil size={16} color="#fff" />
             <Text style={styles.bannerBtnText}>Edit</Text>
           </TouchableOpacity>
           {fileCount > 0 && (
@@ -136,7 +138,7 @@ export default function StudentDetailScreen() {
               style={[styles.bannerBtn, { backgroundColor: "rgba(255,255,255,0.2)" }]}
               onPress={downloadZip}
             >
-              <Feather name="download" size={16} color="#fff" />
+              <Download size={16} color="#fff" />
               <Text style={styles.bannerBtnText}>Download All</Text>
             </TouchableOpacity>
           )}
@@ -148,13 +150,13 @@ export default function StudentDetailScreen() {
         <View style={styles.section}>
           <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>PERSONAL INFO</Text>
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <InfoRow icon="user" label="Father's Name" value={student.fathersName} colors={colors} />
+            <InfoRow icon={User} label="Father's Name" value={student.fathersName} colors={colors} />
             <Divider colors={colors} />
-            <InfoRow icon="calendar" label="Date of Birth" value={student.dateOfBirth} colors={colors} />
+            <InfoRow icon={Calendar} label="Date of Birth" value={student.dateOfBirth} colors={colors} />
             <Divider colors={colors} />
-            <InfoRow icon="phone" label="Mobile" value={student.mobile} colors={colors} />
+            <InfoRow icon={Phone} label="Mobile" value={student.mobile} colors={colors} />
             <Divider colors={colors} />
-            <InfoRow icon="mail" label="Email" value={student.email} colors={colors} />
+            <InfoRow icon={Mail} label="Email" value={student.email} colors={colors} />
           </View>
         </View>
 
@@ -162,9 +164,9 @@ export default function StudentDetailScreen() {
         <View style={styles.section}>
           <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>ACADEMIC INFO</Text>
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <InfoRow icon="award" label="10th Pass Year" value={student.tenthPassYear} colors={colors} />
+            <InfoRow icon={Award} label="10th Pass Year" value={student.tenthPassYear} colors={colors} />
             <Divider colors={colors} />
-            <InfoRow icon="award" label="12th Pass Year" value={student.twelfthPassYear} colors={colors} />
+            <InfoRow icon={Award} label="12th Pass Year" value={student.twelfthPassYear} colors={colors} />
           </View>
         </View>
 
@@ -188,17 +190,12 @@ export default function StudentDetailScreen() {
                     disabled={!file?.fileId}
                     activeOpacity={file?.fileId ? 0.7 : 1}
                   >
-                    <View
-                      style={[
-                        styles.docIcon,
-                        { backgroundColor: file?.fileId ? colors.accent : colors.muted },
-                      ]}
-                    >
-                      <Feather
-                        name={file?.fileId ? "file-text" : "file"}
-                        size={16}
-                        color={file?.fileId ? colors.primary : colors.mutedForeground}
-                      />
+                    <View style={[styles.docIcon, { backgroundColor: file?.fileId ? colors.accent : colors.muted }]}>
+                      {file?.fileId ? (
+                        <FileText size={16} color={colors.primary} />
+                      ) : (
+                        <File size={16} color={colors.mutedForeground} />
+                      )}
                     </View>
                     <View style={styles.docInfo}>
                       <Text style={[styles.docLabel, { color: colors.foreground }]}>{FILE_LABELS[field]}</Text>
@@ -210,7 +207,7 @@ export default function StudentDetailScreen() {
                         <Text style={[styles.docSub, { color: colors.mutedForeground }]}>Not uploaded</Text>
                       )}
                     </View>
-                    {file?.fileId && <Feather name="download" size={16} color={colors.primary} />}
+                    {file?.fileId && <Download size={16} color={colors.primary} />}
                   </TouchableOpacity>
                   {!isLast && <Divider colors={colors} />}
                 </View>
@@ -224,7 +221,7 @@ export default function StudentDetailScreen() {
           style={[styles.deleteBtn, { backgroundColor: "#FEE2E2", borderColor: "#FECACA" }]}
           onPress={handleDelete}
         >
-          <Feather name="trash-2" size={16} color={colors.destructive} />
+          <Trash2 size={16} color={colors.destructive} />
           <Text style={[styles.deleteBtnText, { color: colors.destructive }]}>Delete Student</Text>
         </TouchableOpacity>
       </View>
@@ -232,10 +229,15 @@ export default function StudentDetailScreen() {
   );
 }
 
-function InfoRow({ icon, label, value, colors }: { icon: string; label: string; value: string; colors: any }) {
+function InfoRow({ icon: Icon, label, value, colors }: {
+  icon: React.ComponentType<{ size: number; color: string }>;
+  label: string;
+  value: string;
+  colors: any;
+}) {
   return (
     <View style={styles.infoRow}>
-      <Feather name={icon as any} size={15} color={colors.mutedForeground} />
+      <Icon size={15} color={colors.mutedForeground} />
       <View style={styles.infoText}>
         <Text style={[styles.infoLabel, { color: colors.mutedForeground }]}>{label}</Text>
         <Text style={[styles.infoValue, { color: colors.foreground }]}>{value}</Text>
@@ -253,20 +255,8 @@ const styles = StyleSheet.create({
   errorTitle: { fontSize: 18, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
   retryBtn: { paddingHorizontal: 24, paddingVertical: 12, borderRadius: 10, marginTop: 8 },
   retryBtnText: { color: "#fff", fontFamily: "Inter_600SemiBold", fontWeight: "600" },
-  banner: {
-    padding: 32,
-    paddingTop: 24,
-    alignItems: "center",
-    gap: 6,
-  },
-  avatarLarge: {
-    width: 72,
-    height: 72,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 8,
-  },
+  banner: { padding: 32, paddingTop: 24, alignItems: "center", gap: 6 },
+  avatarLarge: { width: 72, height: 72, borderRadius: 20, alignItems: "center", justifyContent: "center", marginBottom: 8 },
   avatarLargeText: { fontSize: 28, fontWeight: "700", fontFamily: "Inter_700Bold", color: "#fff" },
   bannerName: { fontSize: 22, fontWeight: "700", fontFamily: "Inter_700Bold", color: "#fff" },
   bannerSub: { fontSize: 13, color: "rgba(255,255,255,0.75)", fontFamily: "Inter_400Regular" },

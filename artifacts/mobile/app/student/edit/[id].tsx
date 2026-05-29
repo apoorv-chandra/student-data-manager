@@ -7,7 +7,7 @@ import {
 import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Feather } from "@expo/vector-icons";
+import { X, Check, Calendar, ChevronDown, Save, CheckCircle, Image as ImageIcon, FileText, Upload } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import { useGetStudent } from "@workspace/api-client-react";
@@ -114,7 +114,7 @@ function BoardPickerModal({ visible, onClose, onSelect, currentValue, colors }: 
         <View style={[bpStyles.header, { borderBottomColor: colors.border, backgroundColor: colors.card }]}>
           <Text style={[bpStyles.title, { color: colors.foreground }]}>Select Board</Text>
           <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Feather name="x" size={22} color={colors.foreground} />
+            <X size={22} color={colors.foreground} />
           </TouchableOpacity>
         </View>
         <FlatList
@@ -127,7 +127,7 @@ function BoardPickerModal({ visible, onClose, onSelect, currentValue, colors }: 
               activeOpacity={0.7}
             >
               <Text style={[bpStyles.rowText, { color: colors.foreground }]}>{item}</Text>
-              {currentValue === item && <Feather name="check" size={18} color={colors.primary} />}
+              {currentValue === item && <Check size={18} color={colors.primary} />}
             </TouchableOpacity>
           )}
         />
@@ -297,7 +297,7 @@ export default function EditStudentScreen() {
             style={[styles.dateBtn, { borderColor: errors.dateOfBirth ? colors.destructive : colors.border, backgroundColor: colors.background }]}
             onPress={() => setShowDatePicker(true)}
           >
-            <Feather name="calendar" size={16} color={colors.mutedForeground} />
+            <Calendar size={16} color={colors.mutedForeground} />
             <Text style={[styles.dateBtnText, { color: form.dateOfBirth ? colors.foreground : colors.mutedForeground }]}>
               {form.dateOfBirth || "Select date of birth"}
             </Text>
@@ -375,7 +375,7 @@ export default function EditStudentScreen() {
             <Text style={[styles.pickerBtnText, { color: form.tenthBoard ? colors.foreground : colors.mutedForeground }]} numberOfLines={1}>
               {form.tenthBoard || "Select board"}
             </Text>
-            <Feather name="chevron-down" size={16} color={colors.mutedForeground} />
+            <ChevronDown size={16} color={colors.mutedForeground} />
           </TouchableOpacity>
           {errors.tenthBoard ? <Text style={[styles.fieldError, { color: colors.destructive }]}>{errors.tenthBoard}</Text> : null}
         </View>
@@ -401,7 +401,7 @@ export default function EditStudentScreen() {
             <Text style={[styles.pickerBtnText, { color: form.twelfthBoard ? colors.foreground : colors.mutedForeground }]} numberOfLines={1}>
               {form.twelfthBoard || "Select board"}
             </Text>
-            <Feather name="chevron-down" size={16} color={colors.mutedForeground} />
+            <ChevronDown size={16} color={colors.mutedForeground} />
           </TouchableOpacity>
           {errors.twelfthBoard ? <Text style={[styles.fieldError, { color: colors.destructive }]}>{errors.twelfthBoard}</Text> : null}
         </View>
@@ -448,7 +448,7 @@ export default function EditStudentScreen() {
           <ActivityIndicator color="#fff" size="small" />
         ) : (
           <>
-            <Feather name="save" size={18} color="#fff" />
+            <Save size={18} color="#fff" />
             <Text style={styles.submitBtnText}>Save Changes</Text>
           </>
         )}
@@ -485,11 +485,13 @@ function DocSection({ fields, newFiles, existingFiles, errors, colors, onPick, o
           <View key={field}>
             <TouchableOpacity style={styles.docRow} onPress={() => onPick(field)} activeOpacity={0.7}>
               <View style={[styles.docIcon, { backgroundColor: hasFile ? "#D1FAE5" : hasError ? "#FEE2E2" : colors.muted }]}>
-                <Feather
-                  name={hasFile ? "check-circle" : (IMAGE_FIELDS.has(field) ? "image" : "file-text")}
-                  size={16}
-                  color={hasFile ? "#065F46" : hasError ? colors.destructive : colors.mutedForeground}
-                />
+                {hasFile ? (
+                  <CheckCircle size={16} color="#065F46" />
+                ) : IMAGE_FIELDS.has(field) ? (
+                  <ImageIcon size={16} color={hasError ? colors.destructive : colors.mutedForeground} />
+                ) : (
+                  <FileText size={16} color={hasError ? colors.destructive : colors.mutedForeground} />
+                )}
               </View>
               <View style={styles.docInfo}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
@@ -515,10 +517,10 @@ function DocSection({ fields, newFiles, existingFiles, errors, colors, onPick, o
                   onPress={() => onRemoveNew(field)}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                  <Feather name="x" size={14} color={colors.destructive} />
+                  <X size={14} color={colors.destructive} />
                 </TouchableOpacity>
               ) : (
-                <Feather name="upload" size={16} color={colors.mutedForeground} />
+                <Upload size={16} color={colors.mutedForeground} />
               )}
             </TouchableOpacity>
             {!isLast && <Div colors={colors} />}

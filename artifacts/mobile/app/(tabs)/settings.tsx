@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -6,13 +6,11 @@ import {
   TouchableOpacity,
   Alert,
   ScrollView,
-  TextInput,
-  ActivityIndicator,
   Linking,
   Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
+import { Phone, Grid2X2, ExternalLink, LogOut, ChevronRight } from "lucide-react-native";
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 import { useGetSettings } from "@workspace/api-client-react";
@@ -71,7 +69,7 @@ export default function SettingsScreen() {
             </View>
             <View style={[styles.divider, { backgroundColor: colors.border }]} />
             <View style={styles.infoRow}>
-              <Feather name="phone" size={14} color={colors.mutedForeground} />
+              <Phone size={14} color={colors.mutedForeground} />
               <Text style={[styles.infoText, { color: colors.mutedForeground }]}>{user?.mobile}</Text>
             </View>
           </View>
@@ -84,7 +82,7 @@ export default function SettingsScreen() {
             <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View style={styles.sheetRow}>
                 <View style={[styles.sheetIcon, { backgroundColor: "#E7F3E8" }]}>
-                  <Feather name="grid" size={18} color="#1E7E34" />
+                  <Grid2X2 size={18} color="#1E7E34" />
                 </View>
                 <View style={styles.sheetInfo}>
                   <Text style={[styles.sheetLabel, { color: colors.foreground }]}>Data Sheet</Text>
@@ -94,7 +92,7 @@ export default function SettingsScreen() {
                   style={[styles.openBtn, { backgroundColor: colors.accent }]}
                   onPress={openSheet}
                 >
-                  <Feather name="external-link" size={14} color={colors.primary} />
+                  <ExternalLink size={14} color={colors.primary} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -105,7 +103,7 @@ export default function SettingsScreen() {
             <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View style={styles.sheetRow}>
                 <View style={[styles.sheetIcon, { backgroundColor: colors.muted }]}>
-                  <Feather name="grid" size={18} color={colors.mutedForeground} />
+                  <Grid2X2 size={18} color={colors.mutedForeground} />
                 </View>
                 <View style={styles.sheetInfo}>
                   <Text style={[styles.sheetLabel, { color: colors.foreground }]}>Sheet Not Created</Text>
@@ -123,9 +121,9 @@ export default function SettingsScreen() {
           <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>ACCOUNT</Text>
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
-              <Feather name="log-out" size={18} color={colors.destructive} />
+              <LogOut size={18} color={colors.destructive} />
               <Text style={[styles.menuItemText, { color: colors.destructive }]}>Sign Out</Text>
-              <Feather name="chevron-right" size={16} color={colors.destructive} style={{ marginLeft: "auto" }} />
+              <ChevronRight size={16} color={colors.destructive} style={{ marginLeft: "auto" }} />
             </TouchableOpacity>
           </View>
         </View>
@@ -135,11 +133,7 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-  },
+  header: { paddingHorizontal: 16, paddingBottom: 16, borderBottomWidth: 1 },
   headerTitle: { fontSize: 26, fontWeight: "700", fontFamily: "Inter_700Bold" },
   content: { padding: 16, gap: 24 },
   section: { gap: 8 },

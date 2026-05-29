@@ -1,5 +1,5 @@
 import { Tabs, useRouter } from "expo-router";
-import { Feather } from "@expo/vector-icons";
+import { Users, Settings } from "lucide-react-native";
 import React, { useEffect } from "react";
 import { Platform } from "react-native";
 import { useColors } from "@/hooks/useColors";
@@ -35,14 +35,14 @@ export default function TabLayout() {
         name="students"
         options={{
           title: "Students",
-          tabBarIcon: ({ color, size }) => <Feather name="users" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Users size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
           title: "Settings",
-          tabBarIcon: ({ color, size }) => <Feather name="settings" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Settings size={size} color={color} />,
         }}
       />
     </Tabs>

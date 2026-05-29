@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Feather } from "@expo/vector-icons";
+import { Lock, AlertCircle, Eye, EyeOff, CheckCircle } from "lucide-react-native";
 import { useSetPassword } from "@workspace/api-client-react";
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
@@ -60,7 +60,7 @@ export default function SetPasswordScreen() {
       >
         <View style={styles.logoArea}>
           <View style={[styles.logoCircle, { backgroundColor: colors.warning }]}>
-            <Feather name="lock" size={28} color="#fff" />
+            <Lock size={28} color="#fff" />
           </View>
           <Text style={[styles.title, { color: colors.foreground }]}>Set New Password</Text>
           <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
@@ -71,7 +71,7 @@ export default function SetPasswordScreen() {
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           {error ? (
             <View style={[styles.errorBox, { backgroundColor: "#FEE2E2", borderColor: "#FECACA" }]}>
-              <Feather name="alert-circle" size={14} color="#EF4444" />
+              <AlertCircle size={14} color="#EF4444" />
               <Text style={[styles.errorText, { color: "#DC2626" }]}>{error}</Text>
             </View>
           ) : null}
@@ -79,7 +79,9 @@ export default function SetPasswordScreen() {
           <View style={styles.field}>
             <Text style={[styles.label, { color: colors.mutedForeground }]}>New Password</Text>
             <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.muted }]}>
-              <Feather name="lock" size={16} color={colors.mutedForeground} style={styles.inputIcon} />
+              <View style={styles.inputIcon}>
+                <Lock size={16} color={colors.mutedForeground} />
+              </View>
               <TextInput
                 style={[styles.input, { color: colors.foreground }]}
                 value={newPassword}
@@ -89,7 +91,11 @@ export default function SetPasswordScreen() {
                 secureTextEntry={!showPwd}
               />
               <TouchableOpacity onPress={() => setShowPwd(!showPwd)} style={styles.eyeBtn}>
-                <Feather name={showPwd ? "eye-off" : "eye"} size={16} color={colors.mutedForeground} />
+                {showPwd ? (
+                  <EyeOff size={16} color={colors.mutedForeground} />
+                ) : (
+                  <Eye size={16} color={colors.mutedForeground} />
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -97,7 +103,9 @@ export default function SetPasswordScreen() {
           <View style={styles.field}>
             <Text style={[styles.label, { color: colors.mutedForeground }]}>Confirm Password</Text>
             <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.muted }]}>
-              <Feather name="check-circle" size={16} color={colors.mutedForeground} style={styles.inputIcon} />
+              <View style={styles.inputIcon}>
+                <CheckCircle size={16} color={colors.mutedForeground} />
+              </View>
               <TextInput
                 style={[styles.input, { color: colors.foreground }]}
                 value={confirm}

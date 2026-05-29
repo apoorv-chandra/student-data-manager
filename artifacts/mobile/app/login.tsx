@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Redirect, useRouter } from "expo-router";
-import { Feather } from "@expo/vector-icons";
+import { BookOpen, AlertCircle, Mail, Lock, Eye, EyeOff } from "lucide-react-native";
 import { useLogin } from "@workspace/api-client-react";
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
@@ -78,7 +78,7 @@ export default function LoginScreen() {
       >
         <View style={styles.logoArea}>
           <View style={[styles.logoCircle, { backgroundColor: colors.primary }]}>
-            <Feather name="book-open" size={32} color="#fff" />
+            <BookOpen size={32} color="#fff" />
           </View>
           <Text style={[styles.appName, { color: colors.foreground }]}>Student Data App</Text>
           <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>Sign in to manage your students</Text>
@@ -87,7 +87,7 @@ export default function LoginScreen() {
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           {error ? (
             <View style={[styles.errorBox, { backgroundColor: "#FEE2E2", borderColor: "#FECACA" }]}>
-              <Feather name="alert-circle" size={14} color="#EF4444" />
+              <AlertCircle size={14} color="#EF4444" />
               <Text style={[styles.errorText, { color: "#DC2626" }]}>{error}</Text>
             </View>
           ) : null}
@@ -95,7 +95,9 @@ export default function LoginScreen() {
           <View style={styles.field}>
             <Text style={[styles.label, { color: colors.mutedForeground }]}>Email</Text>
             <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.muted }]}>
-              <Feather name="mail" size={16} color={colors.mutedForeground} style={styles.inputIcon} />
+              <View style={styles.inputIcon}>
+                <Mail size={16} color={colors.mutedForeground} />
+              </View>
               <TextInput
                 style={[styles.input, { color: colors.foreground }]}
                 value={email}
@@ -113,7 +115,9 @@ export default function LoginScreen() {
           <View style={styles.field}>
             <Text style={[styles.label, { color: colors.mutedForeground }]}>Password</Text>
             <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.muted }]}>
-              <Feather name="lock" size={16} color={colors.mutedForeground} style={styles.inputIcon} />
+              <View style={styles.inputIcon}>
+                <Lock size={16} color={colors.mutedForeground} />
+              </View>
               <TextInput
                 style={[styles.input, { color: colors.foreground }]}
                 value={password}
@@ -124,7 +128,11 @@ export default function LoginScreen() {
                 testID="password-input"
               />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
-                <Feather name={showPassword ? "eye-off" : "eye"} size={16} color={colors.mutedForeground} />
+                {showPassword ? (
+                  <EyeOff size={16} color={colors.mutedForeground} />
+                ) : (
+                  <Eye size={16} color={colors.mutedForeground} />
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -148,96 +156,20 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    alignItems: "center",
-  },
-  logoArea: {
-    alignItems: "center",
-    marginBottom: 40,
-  },
-  logoCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-  appName: {
-    fontSize: 26,
-    fontWeight: "700",
-    fontFamily: "Inter_700Bold",
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 15,
-    fontFamily: "Inter_400Regular",
-  },
-  card: {
-    width: "100%",
-    borderRadius: 16,
-    padding: 24,
-    borderWidth: 1,
-    gap: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
-  },
-  errorBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  errorText: {
-    fontSize: 13,
-    fontFamily: "Inter_400Regular",
-    flex: 1,
-  },
-  field: {
-    gap: 6,
-  },
-  label: {
-    fontSize: 13,
-    fontFamily: "Inter_500Medium",
-    fontWeight: "500",
-  },
-  inputWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    height: 48,
-  },
-  inputIcon: {
-    marginRight: 10,
-  },
-  input: {
-    flex: 1,
-    fontSize: 15,
-    fontFamily: "Inter_400Regular",
-  },
-  eyeBtn: {
-    padding: 4,
-  },
-  loginBtn: {
-    height: 50,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 8,
-  },
-  loginBtnText: {
-    color: "#fff",
-    fontSize: 16,
-    fontFamily: "Inter_600SemiBold",
-    fontWeight: "600",
-  },
+  container: { flexGrow: 1, paddingHorizontal: 24, alignItems: "center" },
+  logoArea: { alignItems: "center", marginBottom: 40 },
+  logoCircle: { width: 72, height: 72, borderRadius: 20, alignItems: "center", justifyContent: "center", marginBottom: 16 },
+  appName: { fontSize: 26, fontWeight: "700", fontFamily: "Inter_700Bold", marginBottom: 6 },
+  subtitle: { fontSize: 15, fontFamily: "Inter_400Regular" },
+  card: { width: "100%", borderRadius: 16, padding: 24, borderWidth: 1, gap: 16, shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 3 },
+  errorBox: { flexDirection: "row", alignItems: "center", gap: 8, padding: 12, borderRadius: 8, borderWidth: 1 },
+  errorText: { fontSize: 13, fontFamily: "Inter_400Regular", flex: 1 },
+  field: { gap: 6 },
+  label: { fontSize: 13, fontFamily: "Inter_500Medium", fontWeight: "500" },
+  inputWrap: { flexDirection: "row", alignItems: "center", borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, height: 48 },
+  inputIcon: { marginRight: 10 },
+  input: { flex: 1, fontSize: 15, fontFamily: "Inter_400Regular" },
+  eyeBtn: { padding: 4 },
+  loginBtn: { height: 50, borderRadius: 12, alignItems: "center", justifyContent: "center", marginTop: 8 },
+  loginBtnText: { color: "#fff", fontSize: 16, fontFamily: "Inter_600SemiBold", fontWeight: "600" },
 });

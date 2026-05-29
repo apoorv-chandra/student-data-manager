@@ -57,9 +57,6 @@ export default function RootLayout() {
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
-    // Load Feather icon font directly so icons render on all platforms
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    Feather: require("@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/Feather.ttf"),
   });
 
   useEffect(() => {
