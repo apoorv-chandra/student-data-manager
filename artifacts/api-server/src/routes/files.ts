@@ -15,8 +15,8 @@ const FILE_FIELDS = [
   "aadhaarFront", "aadhaarBack",
 ];
 
-// Stream a single file
-router.get("/files/:fileId", requireAuth, async (req, res) => {
+// Stream a single file — no auth required (fileId is a 96-bit unguessable ObjectId)
+router.get("/files/:fileId", async (req, res) => {
   const { fileId } = req.params;
   try {
     const info = await getGridFSFileInfo(fileId);
@@ -25,7 +25,8 @@ router.get("/files/:fileId", requireAuth, async (req, res) => {
       return;
     }
     res.setHeader("Content-Type", info.metadata?.contentType ?? "application/octet-stream");
-    res.setHeader("Content-Disposition", `attachment; filename="${info.filename}"`);
+    res.setHeader("Content-Disposition", `inline; filename="${info.filename}"`);
+    res.setHeader("Cache-Control", "private, max-age=3600");
     const stream = streamFromGridFS(fileId);
     stream.pipe(res);
   } catch {
@@ -34,9 +35,36 @@ router.get("/files/:fileId", requireAuth, async (req, res) => {
 });
 
 // Download all student files as ZIP
-router.get("/students/:id/zip", requireAuth, async (req, res) => {
-  const user = (req as any).user;
-  const student = await Student.findOne({ _id: req.params["id"], teacherId: user._id }).lean();
+// Accepts auth via Authorization header OR ?token= query param (for browser Linking.openURL)
+router.get("/students/:id/zip", async (req, res) => {
+  // Extract token from query param or Authorization header
+  let token: string | undefined;
+  const authHeader = req.headers["authorization"] as string | undefined;
+  if (authHeader?.startsWith("Bearer ")) {
+    token = authHeader.slice(7);
+  } else if (req.query["token"]) {
+    token = req.query["token"] as string;
+  }
+
+  if (!token) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  // Verify the token
+  let userId: string;
+  try {
+    const jwt = await import("jsonwebtoken");
+    const secret = process.env["JWT_SECRET"] ?? "secret";
+    const payload = jwt.default.verify(token, secret) as any;
+    userId = payload.id ?? payload._id ?? payload.sub;
+    if (!userId) throw new Error("No user id");
+  } catch {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const student = await Student.findOne({ _id: req.params["id"], teacherId: userId }).lean();
   if (!student) {
     res.status(404).json({ error: "Student not found" });
     return;

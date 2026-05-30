@@ -53,8 +53,10 @@ export default function StudentDetailScreen() {
     return `${baseUrl}/api/files/${fileId}`;
   }
 
-  function getZipUrl() {
-    return `${baseUrl}/api/students/${id}/zip`;
+  async function getZipUrl() {
+    const AsyncStorage = (await import("@react-native-async-storage/async-storage")).default;
+    const token = await AsyncStorage.getItem("@auth_token");
+    return `${baseUrl}/api/students/${id}/zip${token ? `?token=${token}` : ""}`;
   }
 
   async function openFile(fileId: string) {
@@ -62,7 +64,8 @@ export default function StudentDetailScreen() {
   }
 
   async function downloadZip() {
-    Linking.openURL(getZipUrl());
+    const url = await getZipUrl();
+    Linking.openURL(url);
   }
 
   function handleDelete() {

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -8,19 +8,44 @@ import {
   ScrollView,
   Linking,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Phone, Grid2X2, ExternalLink, LogOut, ChevronRight } from "lucide-react-native";
+import { Phone, Grid2X2, ExternalLink, LogOut, ChevronRight, RefreshCw } from "lucide-react-native";
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 import { useGetSettings } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function SettingsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
+  const qc = useQueryClient();
+  const [creatingSheet, setCreatingSheet] = useState(false);
 
   const { data: settings } = useGetSettings();
+
+  async function handleCreateSheet() {
+    setCreatingSheet(true);
+    try {
+      const AsyncStorage = (await import("@react-native-async-storage/async-storage")).default;
+      const token = await AsyncStorage.getItem("@auth_token");
+      const baseUrl = `https://${process.env.EXPO_PUBLIC_DOMAIN}`;
+      const res = await fetch(`${baseUrl}/api/settings/create-sheet`, {
+        method: "POST",
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed");
+      qc.invalidateQueries({ queryKey: ["settings"] });
+      Alert.alert("Sheet Created!", "Your Google Sheet has been created and linked.");
+    } catch (e: any) {
+      Alert.alert("Error", e?.message ?? "Could not create sheet. Please try again.");
+    } finally {
+      setCreatingSheet(false);
+    }
+  }
 
   function handleLogout() {
     Alert.alert("Sign Out", "Are you sure you want to sign out?", [
@@ -108,9 +133,19 @@ export default function SettingsScreen() {
                 <View style={styles.sheetInfo}>
                   <Text style={[styles.sheetLabel, { color: colors.foreground }]}>Sheet Not Created</Text>
                   <Text style={[styles.sheetSub, { color: colors.mutedForeground }]}>
-                    Will be created automatically when you add your first student
+                    Tap to create your Google Sheet now
                   </Text>
                 </View>
+                <TouchableOpacity
+                  style={[styles.openBtn, { backgroundColor: creatingSheet ? colors.muted : colors.accent }]}
+                  onPress={handleCreateSheet}
+                  disabled={creatingSheet}
+                >
+                  {creatingSheet
+                    ? <ActivityIndicator size="small" color={colors.primary} />
+                    : <RefreshCw size={14} color={colors.primary} />
+                  }
+                </TouchableOpacity>
               </View>
             </View>
           </View>
