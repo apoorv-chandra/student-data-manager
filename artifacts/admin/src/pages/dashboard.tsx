@@ -11,6 +11,11 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+const API_BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/+$/, "") ?? "";
+function apiFetch(path: string, init?: RequestInit) {
+  return fetch(`${API_BASE}${path}`, init);
+}
+
 export default function DashboardPage() {
   const { user, logout, token } = useAuth();
   const { toast } = useToast();
@@ -48,7 +53,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!token) return;
-    fetch("/api/admin/teachers/master-sheet", {
+    apiFetch("/api/admin/teachers/master-sheet", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.json())
@@ -100,7 +105,7 @@ export default function DashboardPage() {
     if (!deleteTarget) return;
     setIsDeleting(true);
     try {
-      const res = await fetch(`/api/admin/teachers/${deleteTarget.id}`, {
+      const res = await apiFetch(`/api/admin/teachers/${deleteTarget.id}`, {
         method: "DELETE",
         headers: { Authorization: token ? `Bearer ${token}` : "" },
       });
@@ -127,7 +132,7 @@ export default function DashboardPage() {
     setSheetCreating((s) => ({ ...s, [teacher.id]: true }));
     setSheetFailed((s) => { const n = { ...s }; delete n[teacher.id]; return n; });
     try {
-      const res = await fetch(`/api/admin/teachers/${teacher.id}/create-sheet`, {
+      const res = await apiFetch(`/api/admin/teachers/${teacher.id}/create-sheet`, {
         method: "POST",
         headers: { Authorization: token ? `Bearer ${token}` : "" },
       });
@@ -146,7 +151,7 @@ export default function DashboardPage() {
   async function handleResetPassword(teacher: Teacher) {
     setResetPwdLoading((s) => ({ ...s, [teacher.id]: true }));
     try {
-      const res = await fetch(`/api/admin/teachers/${teacher.id}/reset-password`, {
+      const res = await apiFetch(`/api/admin/teachers/${teacher.id}/reset-password`, {
         method: "POST",
         headers: { Authorization: token ? `Bearer ${token}` : "" },
       });
@@ -166,7 +171,7 @@ export default function DashboardPage() {
     if (!sheetUrlInput.trim()) return;
     setSavingMasterSheet(true);
     try {
-      const res = await fetch("/api/admin/teachers/master-sheet", {
+      const res = await apiFetch("/api/admin/teachers/master-sheet", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
