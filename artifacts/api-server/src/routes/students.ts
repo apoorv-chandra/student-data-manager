@@ -5,7 +5,7 @@ import { Teacher } from "../models/Teacher";
 import { requireAuth } from "../middlewares/auth";
 import { compressFile } from "../lib/compress";
 import { uploadToGridFS, deleteFromGridFS } from "../lib/gridfs";
-import { appendStudentRow, updateStudentRow, deleteStudentRow } from "../lib/sheets";
+import { addTeacherTab, appendStudentRow, updateStudentRow, deleteStudentRow } from "../lib/sheets";
 import { z } from "zod";
 
 const router = Router();
@@ -142,7 +142,22 @@ router.post(
       files: processedFiles,
     });
 
-    const teacher = await Teacher.findById(user._id);
+    let teacher = await Teacher.findById(user._id);
+
+    // Auto-create Google Sheet tab on first student if not yet set up
+    if (teacher && !teacher.googleSheetId && process.env["GOOGLE_SERVICE_ACCOUNT_JSON"]) {
+      try {
+        const result = await addTeacherTab(teacher.name);
+        teacher = await Teacher.findByIdAndUpdate(
+          teacher._id,
+          { googleSheetId: result.spreadsheetId, googleSheetUrl: result.url, googleSheetTabName: result.tabName },
+          { new: true }
+        );
+      } catch (e) {
+        console.error("Google Sheets tab creation failed:", e);
+      }
+    }
+
     if (teacher?.googleSheetId && teacher?.googleSheetTabName) {
       try {
         const baseUrl = getBaseUrl(req);

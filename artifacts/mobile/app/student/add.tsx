@@ -173,7 +173,7 @@ export default function AddStudentScreen() {
   const [form, setFormState] = useState<FormState>({
     name: "", fathersName: "", dateOfBirth: "", address: "",
     aadhaarNumber: "", mobile: "", email: "",
-    department: "", course: "",
+    department: "Degree", course: "B.A.",
     tenthPassYear: "", tenthSchoolName: "", tenthBoard: "",
     twelfthPassYear: "", twelfthSchoolName: "", twelfthBoard: "",
   });
