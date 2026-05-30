@@ -64,6 +64,8 @@ const studentSchema = z.object({
   ),
   twelfthSchoolName: z.string().optional().default(""),
   twelfthBoard: z.string().optional().default(""),
+  department: z.string().optional().default(""),
+  course: z.string().optional().default(""),
 });
 
 function getBaseUrl(req: any): string {
@@ -186,6 +188,7 @@ router.patch(
       "name", "fathersName", "dateOfBirth", "address", "aadhaarNumber",
       "mobile", "email", "tenthPassYear", "tenthSchoolName", "tenthBoard",
       "twelfthPassYear", "twelfthSchoolName", "twelfthBoard",
+      "department", "course",
     ];
     const textFields: any = {};
     for (const key of textKeys) {

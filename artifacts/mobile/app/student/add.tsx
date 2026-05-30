@@ -39,10 +39,18 @@ const MANDATORY_DOCS = ["photo", "signature", "tenthMarksheet", "twelfthMarkshee
 const OPTIONAL_DOCS = ["graduationMarksheet", "pgMarksheet", "casteCertificate", "domicileCertificate", "affidavit"];
 const IMAGE_FIELDS = new Set(["photo", "signature", "aadhaarFront", "aadhaarBack"]);
 
+const DEPARTMENTS = ["Degree", "Law College", "Pharmacy"];
+const COURSES_BY_DEPARTMENT: Record<string, string[]> = {
+  "Degree": ["B.A.", "B.Sc", "B.Com", "M.A.", "M.Sc", "B.Ed.", "D.El.Ed"],
+  "Law College": ["LL.B.", "B.A.LL.B."],
+  "Pharmacy": ["D.Pharma", "B.Pharma."],
+};
+
 interface PickedFile { uri: string; name: string; type: string; }
 interface FormState {
   name: string; fathersName: string; dateOfBirth: string;
   address: string; aadhaarNumber: string; mobile: string; email: string;
+  department: string; course: string;
   tenthPassYear: string; tenthSchoolName: string; tenthBoard: string;
   twelfthPassYear: string; twelfthSchoolName: string; twelfthBoard: string;
 }
@@ -102,6 +110,9 @@ function validateForm(form: FormState, files: Record<string, PickedFile>): Recor
   if (!form.twelfthSchoolName.trim()) errs.twelfthSchoolName = "School name is required";
   if (!form.twelfthBoard) errs.twelfthBoard = "Board selection is required";
 
+  if (!form.department) errs.department = "Department is required";
+  if (!form.course) errs.course = "Course is required";
+
   for (const field of MANDATORY_DOCS) {
     if (!files[field]) errs[`doc_${field}`] = `${FILE_LABELS[field]} is required`;
   }
@@ -109,24 +120,25 @@ function validateForm(form: FormState, files: Record<string, PickedFile>): Recor
   return errs;
 }
 
-// ─── Board Picker Modal ───────────────────────────────────────────────
-function BoardPickerModal({
-  visible, onClose, onSelect, currentValue, colors,
+// ─── Generic Picker Modal ────────────────────────────────────────────
+function SimplePickerModal({
+  visible, title, data, onClose, onSelect, currentValue, colors,
 }: {
-  visible: boolean; onClose: () => void; onSelect: (v: string) => void;
+  visible: boolean; title: string; data: string[];
+  onClose: () => void; onSelect: (v: string) => void;
   currentValue: string; colors: any;
 }) {
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         <View style={[bpStyles.header, { borderBottomColor: colors.border, backgroundColor: colors.card }]}>
-          <Text style={[bpStyles.title, { color: colors.foreground }]}>Select Board</Text>
+          <Text style={[bpStyles.title, { color: colors.foreground }]}>{title}</Text>
           <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
             <X size={22} color={colors.foreground} />
           </TouchableOpacity>
         </View>
         <FlatList
-          data={INDIAN_BOARDS}
+          data={data}
           keyExtractor={(item) => item}
           renderItem={({ item }) => (
             <TouchableOpacity
@@ -161,6 +173,7 @@ export default function AddStudentScreen() {
   const [form, setFormState] = useState<FormState>({
     name: "", fathersName: "", dateOfBirth: "", address: "",
     aadhaarNumber: "", mobile: "", email: "",
+    department: "", course: "",
     tenthPassYear: "", tenthSchoolName: "", tenthBoard: "",
     twelfthPassYear: "", twelfthSchoolName: "", twelfthBoard: "",
   });
@@ -171,6 +184,8 @@ export default function AddStudentScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [datePickerValue, setDatePickerValue] = useState(new Date(2000, 0, 1));
   const [boardPickerFor, setBoardPickerFor] = useState<"tenth" | "twelfth" | null>(null);
+  const [deptPickerVisible, setDeptPickerVisible] = useState(false);
+  const [coursePickerVisible, setCoursePickerVisible] = useState(false);
 
   useEffect(() => {
     getQueue().then((q) => setPendingCount(q.length));
@@ -179,6 +194,11 @@ export default function AddStudentScreen() {
   function setField(key: keyof FormState, value: string) {
     setFormState((f) => ({ ...f, [key]: value }));
     setErrors((e) => ({ ...e, [key]: "" }));
+  }
+
+  function handleDepartmentChange(dept: string) {
+    setFormState((f) => ({ ...f, department: dept, course: "" }));
+    setErrors((e) => ({ ...e, department: "", course: "" }));
   }
 
   function onDateChange(event: DateTimePickerEvent, selected?: Date) {
@@ -381,6 +401,40 @@ export default function AddStudentScreen() {
 
       <View style={styles.gap} />
 
+      {/* Admission Details */}
+      <SectionTitle label="Admission Details" colors={colors} />
+      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={styles.formField}>
+          <Text style={[styles.fieldLabel, { color: colors.mutedForeground }]}>Department *</Text>
+          <TouchableOpacity
+            style={[styles.pickerBtn, { borderColor: errors.department ? colors.destructive : colors.border, backgroundColor: colors.background }]}
+            onPress={() => setDeptPickerVisible(true)}
+          >
+            <Text style={[styles.pickerBtnText, { color: form.department ? colors.foreground : colors.mutedForeground }]} numberOfLines={1}>
+              {form.department || "Select department"}
+            </Text>
+            <ChevronDown size={16} color={colors.mutedForeground} />
+          </TouchableOpacity>
+          {errors.department ? <Text style={[styles.fieldError, { color: colors.destructive }]}>{errors.department}</Text> : null}
+        </View>
+        <Div colors={colors} />
+        <View style={styles.formField}>
+          <Text style={[styles.fieldLabel, { color: colors.mutedForeground }]}>Course *</Text>
+          <TouchableOpacity
+            style={[styles.pickerBtn, { borderColor: errors.course ? colors.destructive : colors.border, backgroundColor: colors.background, opacity: form.department ? 1 : 0.5 }]}
+            onPress={() => { if (form.department) setCoursePickerVisible(true); }}
+          >
+            <Text style={[styles.pickerBtnText, { color: form.course ? colors.foreground : colors.mutedForeground }]} numberOfLines={1}>
+              {form.course || (form.department ? "Select course" : "Select department first")}
+            </Text>
+            <ChevronDown size={16} color={colors.mutedForeground} />
+          </TouchableOpacity>
+          {errors.course ? <Text style={[styles.fieldError, { color: colors.destructive }]}>{errors.course}</Text> : null}
+        </View>
+      </View>
+
+      <View style={styles.gap} />
+
       {/* Academic Details */}
       <SectionTitle label="Academic Details" colors={colors} />
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -484,17 +538,34 @@ export default function AddStudentScreen() {
         )}
       </TouchableOpacity>
 
-      <BoardPickerModal
+      <SimplePickerModal
         visible={boardPickerFor !== null}
+        title="Select Board"
+        data={INDIAN_BOARDS}
         onClose={() => setBoardPickerFor(null)}
         onSelect={(v) => {
-          if (boardPickerFor === "tenth") {
-            setField("tenthBoard", v);
-          } else if (boardPickerFor === "twelfth") {
-            setField("twelfthBoard", v);
-          }
+          if (boardPickerFor === "tenth") setField("tenthBoard", v);
+          else if (boardPickerFor === "twelfth") setField("twelfthBoard", v);
         }}
         currentValue={boardPickerFor === "tenth" ? form.tenthBoard : form.twelfthBoard}
+        colors={colors}
+      />
+      <SimplePickerModal
+        visible={deptPickerVisible}
+        title="Select Department"
+        data={DEPARTMENTS}
+        onClose={() => setDeptPickerVisible(false)}
+        onSelect={handleDepartmentChange}
+        currentValue={form.department}
+        colors={colors}
+      />
+      <SimplePickerModal
+        visible={coursePickerVisible}
+        title="Select Course"
+        data={form.department ? (COURSES_BY_DEPARTMENT[form.department] ?? []) : []}
+        onClose={() => setCoursePickerVisible(false)}
+        onSelect={(v) => setField("course", v)}
+        currentValue={form.course}
         colors={colors}
       />
     </ScrollView>
