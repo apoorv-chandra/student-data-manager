@@ -78,13 +78,29 @@ export default function StudentDetailScreen() {
           text: "Delete",
           style: "destructive",
           onPress: async () => {
-            try {
-              await deleteMutation.mutateAsync({ id: id ?? "" });
-              qc.invalidateQueries({ queryKey: ["students"] });
-              router.back();
-            } catch {
-              Alert.alert("Error", "Failed to delete student. Try again.");
-            }
+            qc.setQueriesData({ queryKey: ["students"] }, (old: any) => {
+              if (!old) return old;
+              if (Array.isArray(old)) return old.filter((s: any) => s.id !== id);
+              if (old.pages) {
+                return {
+                  ...old,
+                  pages: old.pages.map((page: any) => ({
+                    ...page,
+                    students: (page.students ?? []).filter((s: any) => s.id !== id),
+                    total: Math.max(0, (page.total ?? 1) - 1),
+                  })),
+                };
+              }
+              return old;
+            });
+            router.back();
+            deleteMutation.mutate(
+              { id: id ?? "" },
+              {
+                onSuccess: () => { qc.invalidateQueries({ queryKey: ["students"] }); },
+                onError: () => { qc.invalidateQueries({ queryKey: ["students"] }); },
+              }
+            );
           },
         },
       ]

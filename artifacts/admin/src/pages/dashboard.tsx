@@ -33,6 +33,9 @@ export default function DashboardPage() {
   const [sheetCreating, setSheetCreating] = useState<Record<string, boolean>>({});
   const [sheetFailed, setSheetFailed] = useState<Record<string, string>>({});
 
+  // Per-teacher password reset state
+  const [resetPwdLoading, setResetPwdLoading] = useState<Record<string, boolean>>({});
+
   // Master sheet setup state
   const [masterSheetInfo, setMasterSheetInfo] = useState<{ masterSheetUrl: string | null; serviceAccountEmail: string | null } | null>(null);
   const [sheetUrlInput, setSheetUrlInput] = useState("");
@@ -137,6 +140,24 @@ export default function DashboardPage() {
       toast({ title: "Sheet creation failed", description: e?.message ?? "Try again", variant: "destructive" });
     } finally {
       setSheetCreating((s) => { const n = { ...s }; delete n[teacher.id]; return n; });
+    }
+  }
+
+  async function handleResetPassword(teacher: Teacher) {
+    setResetPwdLoading((s) => ({ ...s, [teacher.id]: true }));
+    try {
+      const res = await fetch(`/api/admin/teachers/${teacher.id}/reset-password`, {
+        method: "POST",
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed");
+      qc.invalidateQueries({ queryKey: ["listTeachers"] });
+      toast({ title: "Password reset", description: `New temp password for ${teacher.name}: ${body.tempPassword}` });
+    } catch (e: any) {
+      toast({ title: "Reset failed", description: e?.message ?? "Try again", variant: "destructive" });
+    } finally {
+      setResetPwdLoading((s) => { const n = { ...s }; delete n[teacher.id]; return n; });
     }
   }
 
@@ -316,8 +337,10 @@ export default function DashboardPage() {
                   onToggle={() => handleToggle(teacher)}
                   onDelete={() => setDeleteTarget(teacher)}
                   onCreateSheet={() => handleCreateSheet(teacher)}
+                  onResetPassword={() => handleResetPassword(teacher)}
                   isToggling={toggleMutation.isPending}
                   isCreatingSheet={!!sheetCreating[teacher.id]}
+                  isResettingPassword={!!resetPwdLoading[teacher.id]}
                   sheetError={sheetFailed[teacher.id]}
                 />
               ))}
@@ -538,21 +561,22 @@ export default function DashboardPage() {
 }
 
 function TeacherRow({
-  teacher, onToggle, onDelete, onCreateSheet, isToggling, isCreatingSheet, sheetError,
+  teacher, onToggle, onDelete, onCreateSheet, onResetPassword, isToggling, isCreatingSheet, isResettingPassword, sheetError,
 }: {
   teacher: Teacher;
   onToggle: () => void;
   onDelete: () => void;
   onCreateSheet: () => void;
+  onResetPassword: () => void;
   isToggling: boolean;
   isCreatingSheet: boolean;
+  isResettingPassword: boolean;
   sheetError?: string;
 }) {
   const [showPasswords, setShowPasswords] = useState(false);
 
   const hasSheet = !!teacher.googleSheetUrl;
   const hasFailed = !!sheetError;
-  const hasPasswordData = !!(teacher.initialPassword || teacher.customPassword);
 
   return (
     <div className="px-6 py-4 hover:bg-gray-50 transition-colors">
@@ -598,11 +622,26 @@ function TeacherRow({
               <>
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800">
                   Initial:{" "}
-                  {hasPasswordData && teacher.initialPassword
+                  {teacher.initialPassword
                     ? <strong className="font-mono">{teacher.initialPassword}</strong>
                     : <span className="italic text-amber-500">not saved</span>
                   }
                 </span>
+                {!teacher.initialPassword && (
+                  <button
+                    onClick={onResetPassword}
+                    disabled={isResettingPassword}
+                    title="Generate a new temporary password for this teacher"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700 hover:bg-blue-100 transition-colors disabled:opacity-50"
+                  >
+                    {isResettingPassword ? (
+                      <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-3 h-3" />
+                    )}
+                    Reset pwd
+                  </button>
+                )}
                 <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs border ${
                   teacher.customPassword
                     ? "bg-blue-50 border-blue-200 text-blue-800"

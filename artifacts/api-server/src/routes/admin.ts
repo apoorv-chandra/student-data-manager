@@ -168,6 +168,24 @@ router.post("/", async (req, res) => {
   });
 });
 
+// Reset a teacher's password and save a new initial password
+router.post("/:id/reset-password", async (req, res) => {
+  const teacher = await Teacher.findOne({ _id: req.params["id"], role: "teacher" });
+  if (!teacher) {
+    res.status(404).json({ error: "Teacher not found" });
+    return;
+  }
+  const tempPassword = crypto.randomBytes(4).toString("hex").toUpperCase();
+  const passwordHash = await bcrypt.hash(tempPassword, 10);
+  await Teacher.findByIdAndUpdate(teacher._id, {
+    passwordHash,
+    initialPassword: tempPassword,
+    customPassword: null,
+    requiresPasswordChange: true,
+  });
+  res.json({ tempPassword });
+});
+
 // Manually create Google Sheet tab for a teacher
 router.post("/:id/create-sheet", async (req, res) => {
   const teacher = await Teacher.findOne({ _id: req.params["id"], role: "teacher" });

@@ -266,18 +266,27 @@ export async function deleteStudentRow(
   );
   const sheetId = sheetObj?.properties?.sheetId ?? 0;
 
+  const totalColumns = HEADERS.length;
+
   await sheets.spreadsheets.batchUpdate({
     spreadsheetId,
     requestBody: {
       requests: [
         {
-          deleteDimension: {
+          repeatCell: {
             range: {
               sheetId,
-              dimension: "ROWS",
-              startIndex: rowIndex - 1,
-              endIndex: rowIndex,
+              startRowIndex: rowIndex - 1,
+              endRowIndex: rowIndex,
+              startColumnIndex: 0,
+              endColumnIndex: totalColumns,
             },
+            cell: {
+              userEnteredFormat: {
+                textFormat: { strikethrough: true },
+              },
+            },
+            fields: "userEnteredFormat.textFormat.strikethrough",
           },
         },
       ],
