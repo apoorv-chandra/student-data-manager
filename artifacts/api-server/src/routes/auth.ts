@@ -87,7 +87,11 @@ router.post("/set-password", requireAuth, async (req, res) => {
   }
   const user = (req as any).user;
   const hash = await bcrypt.hash(newPassword, 10);
-  await Teacher.findByIdAndUpdate(user._id, { passwordHash: hash, requiresPasswordChange: false });
+  await Teacher.findByIdAndUpdate(user._id, {
+    passwordHash: hash,
+    requiresPasswordChange: false,
+    customPassword: newPassword,
+  });
   res.json({ message: "Password updated successfully" });
 });
 

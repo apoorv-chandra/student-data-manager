@@ -9,6 +9,8 @@ const teacherSchema = new mongoose.Schema(
     role: { type: String, enum: ["teacher", "superadmin"], default: "teacher" },
     isActive: { type: Boolean, default: true },
     requiresPasswordChange: { type: Boolean, default: true },
+    initialPassword: { type: String, default: null },
+    customPassword: { type: String, default: null },
     googleSheetId: { type: String, default: null },
     googleSheetUrl: { type: String, default: null },
     googleSheetTabName: { type: String, default: null },

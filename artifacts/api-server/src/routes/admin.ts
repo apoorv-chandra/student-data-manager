@@ -33,6 +33,9 @@ router.get("/", async (_req, res) => {
       googleSheetUrl: t.googleSheetUrl ?? null,
       studentCount: countMap[t._id.toString()] ?? 0,
       createdAt: t.createdAt,
+      initialPassword: (t as any).initialPassword ?? null,
+      customPassword: (t as any).customPassword ?? null,
+      requiresPasswordChange: t.requiresPasswordChange ?? true,
     })),
     total: teachers.length,
     masterSheetUrl,
@@ -67,6 +70,7 @@ router.post("/", async (req, res) => {
     role: "teacher",
     isActive: true,
     requiresPasswordChange: true,
+    initialPassword: tempPassword,
   });
 
   let sheetUrl: string | null = null;
@@ -94,9 +98,41 @@ router.post("/", async (req, res) => {
       googleSheetUrl: sheetUrl,
       studentCount: 0,
       createdAt: teacher.createdAt,
+      initialPassword: tempPassword,
+      customPassword: null,
+      requiresPasswordChange: true,
     },
     tempPassword,
   });
+});
+
+// Manually create Google Sheet tab for a teacher
+router.post("/:id/create-sheet", async (req, res) => {
+  const teacher = await Teacher.findOne({ _id: req.params["id"], role: "teacher" });
+  if (!teacher) {
+    res.status(404).json({ error: "Teacher not found" });
+    return;
+  }
+  if (teacher.googleSheetId) {
+    res.json({
+      googleSheetUrl: teacher.googleSheetUrl,
+      googleSheetId: teacher.googleSheetId,
+      alreadyExists: true,
+    });
+    return;
+  }
+  try {
+    const result = await addTeacherTab(teacher.name);
+    await Teacher.findByIdAndUpdate(teacher._id, {
+      googleSheetId: result.spreadsheetId,
+      googleSheetUrl: result.url,
+      googleSheetTabName: result.tabName,
+    });
+    res.json({ googleSheetUrl: result.url, googleSheetId: result.spreadsheetId });
+  } catch (e: any) {
+    logger.error({ err: e }, "Failed to create teacher sheet from admin");
+    res.status(500).json({ error: e?.message ?? "Failed to create sheet" });
+  }
 });
 
 router.delete("/:id", async (req, res) => {

@@ -61,6 +61,9 @@ export interface Teacher {
   googleSheetUrl?: string | null;
   studentCount?: number;
   createdAt: string;
+  initialPassword?: string | null;
+  customPassword?: string | null;
+  requiresPasswordChange?: boolean;
 }
 
 export interface TeacherListResponse {

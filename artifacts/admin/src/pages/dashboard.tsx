@@ -6,7 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   BookOpen, Users, Plus, LogOut, ToggleLeft, ToggleRight,
   Copy, Check, AlertCircle, X, Mail, Phone, CheckCircle, XCircle,
-  ExternalLink, RefreshCw, Trash2, AlertTriangle,
+  ExternalLink, RefreshCw, Trash2, AlertTriangle, Sheet, Key, Eye, EyeOff,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -26,6 +26,10 @@ export default function DashboardPage() {
   const [copiedPwd, setCopiedPwd] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Teacher | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Per-teacher sheet creation state
+  const [sheetCreating, setSheetCreating] = useState<Record<string, boolean>>({});
+  const [sheetFailed, setSheetFailed] = useState<Record<string, string>>({});
 
   const teachers = data?.teachers ?? [];
   const activeCount = teachers.filter((t) => t.isActive).length;
@@ -91,6 +95,30 @@ export default function DashboardPage() {
       toast({ title: "Error", description: "Network error — could not delete teacher.", variant: "destructive" });
     } finally {
       setIsDeleting(false);
+    }
+  }
+
+  async function handleCreateSheet(teacher: Teacher) {
+    if (teacher.googleSheetUrl) {
+      window.open(teacher.googleSheetUrl, "_blank");
+      return;
+    }
+    setSheetCreating((s) => ({ ...s, [teacher.id]: true }));
+    setSheetFailed((s) => { const n = { ...s }; delete n[teacher.id]; return n; });
+    try {
+      const res = await fetch(`/api/admin/teachers/${teacher.id}/create-sheet`, {
+        method: "POST",
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed");
+      qc.invalidateQueries({ queryKey: ["listTeachers"] });
+      toast({ title: "Sheet Created", description: `Google Sheet tab created for ${teacher.name}` });
+    } catch (e: any) {
+      setSheetFailed((s) => ({ ...s, [teacher.id]: e?.message ?? "Failed to create sheet" }));
+      toast({ title: "Sheet creation failed", description: e?.message ?? "Try again", variant: "destructive" });
+    } finally {
+      setSheetCreating((s) => { const n = { ...s }; delete n[teacher.id]; return n; });
     }
   }
 
@@ -203,7 +231,10 @@ export default function DashboardPage() {
                   teacher={teacher}
                   onToggle={() => handleToggle(teacher)}
                   onDelete={() => setDeleteTarget(teacher)}
+                  onCreateSheet={() => handleCreateSheet(teacher)}
                   isToggling={toggleMutation.isPending}
+                  isCreatingSheet={!!sheetCreating[teacher.id]}
+                  sheetError={sheetFailed[teacher.id]}
                 />
               ))}
             </div>
@@ -298,7 +329,7 @@ export default function DashboardPage() {
                 </button>
               </div>
               <p className="text-xs text-amber-600 mt-2">
-                ⚠ This password won't be shown again. The teacher will be prompted to change it on first login.
+                ⚠ The teacher will be prompted to change this password on first login. Both passwords are visible in the teacher list.
               </p>
             </div>
 
@@ -359,61 +390,135 @@ export default function DashboardPage() {
   );
 }
 
-function TeacherRow({ teacher, onToggle, onDelete, isToggling }: {
-  teacher: Teacher; onToggle: () => void; onDelete: () => void; isToggling: boolean;
+function TeacherRow({
+  teacher, onToggle, onDelete, onCreateSheet, isToggling, isCreatingSheet, sheetError,
+}: {
+  teacher: Teacher;
+  onToggle: () => void;
+  onDelete: () => void;
+  onCreateSheet: () => void;
+  isToggling: boolean;
+  isCreatingSheet: boolean;
+  sheetError?: string;
 }) {
+  const [showPasswords, setShowPasswords] = useState(false);
+
+  const hasSheet = !!teacher.googleSheetUrl;
+  const hasFailed = !!sheetError;
+
   return (
-    <div className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors">
-      <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
-        <span className="text-blue-600 font-bold text-sm">
-          {teacher.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
-        </span>
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-medium text-gray-900 text-sm">{teacher.name}</span>
-          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${teacher.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
-            {teacher.isActive ? "Active" : "Inactive"}
+    <div className="px-6 py-4 hover:bg-gray-50 transition-colors">
+      <div className="flex items-center gap-4">
+        <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+          <span className="text-blue-600 font-bold text-sm">
+            {teacher.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
           </span>
         </div>
-        <div className="flex items-center gap-4 mt-0.5 flex-wrap">
-          <span className="text-xs text-gray-500 flex items-center gap-1">
-            <Mail className="w-3 h-3" />{teacher.email}
-          </span>
-          <span className="text-xs text-gray-500 flex items-center gap-1">
-            <Phone className="w-3 h-3" />{teacher.mobile}
-          </span>
-          <span className="text-xs text-gray-400">{teacher.studentCount ?? 0} students</span>
-          {teacher.googleSheetUrl && (
-            <span className="hidden sm:inline-flex items-center gap-1 text-xs text-green-600 font-medium">
-              <CheckCircle className="w-3 h-3" /> Sheet ready
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-medium text-gray-900 text-sm">{teacher.name}</span>
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${teacher.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+              {teacher.isActive ? "Active" : "Inactive"}
             </span>
+          </div>
+          <div className="flex items-center gap-4 mt-0.5 flex-wrap">
+            <span className="text-xs text-gray-500 flex items-center gap-1">
+              <Mail className="w-3 h-3" />{teacher.email}
+            </span>
+            <span className="text-xs text-gray-500 flex items-center gap-1">
+              <Phone className="w-3 h-3" />{teacher.mobile}
+            </span>
+            <span className="text-xs text-gray-400">{teacher.studentCount ?? 0} students</span>
+            {hasSheet && (
+              <span className="hidden sm:inline-flex items-center gap-1 text-xs text-green-600 font-medium">
+                <CheckCircle className="w-3 h-3" /> Sheet ready
+              </span>
+            )}
+          </div>
+
+          {/* Password row */}
+          {(teacher.initialPassword || teacher.customPassword) && (
+            <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => setShowPasswords((v) => !v)}
+                className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                title={showPasswords ? "Hide passwords" : "Show passwords"}
+              >
+                <Key className="w-3 h-3" />
+                {showPasswords ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                <span>{showPasswords ? "Hide passwords" : "Show passwords"}</span>
+              </button>
+              {showPasswords && (
+                <>
+                  {teacher.initialPassword && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 border border-amber-200 rounded text-xs font-mono text-amber-800">
+                      Initial: <strong>{teacher.initialPassword}</strong>
+                    </span>
+                  )}
+                  {teacher.customPassword ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 border border-blue-200 rounded text-xs font-mono text-blue-800">
+                      Changed to: <strong>{teacher.customPassword}</strong>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-50 border border-gray-200 rounded text-xs text-gray-500">
+                      Not changed yet
+                    </span>
+                  )}
+                </>
+              )}
+            </div>
           )}
         </div>
-      </div>
-      <div className="flex items-center gap-1 flex-shrink-0">
-        <button
-          onClick={onToggle}
-          disabled={isToggling}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-            teacher.isActive
-              ? "text-orange-600 hover:bg-orange-50"
-              : "text-green-600 hover:bg-green-50"
-          } disabled:opacity-50`}
-        >
-          {teacher.isActive ? (
-            <><ToggleRight className="w-4 h-4" />Deactivate</>
-          ) : (
-            <><ToggleLeft className="w-4 h-4" />Activate</>
-          )}
-        </button>
-        <button
-          onClick={onDelete}
-          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-          title="Delete teacher"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {/* Create / view sheet button */}
+          <button
+            onClick={onCreateSheet}
+            disabled={isCreatingSheet}
+            title={
+              hasSheet ? "Open Google Sheet" :
+              hasFailed ? `Failed: ${sheetError} — tap to retry` :
+              "Create Google Sheet"
+            }
+            className={`p-2 rounded-lg transition-colors disabled:opacity-50 ${
+              hasSheet
+                ? "text-green-600 hover:bg-green-50"
+                : hasFailed
+                ? "text-red-500 hover:bg-red-50"
+                : "text-gray-400 hover:text-blue-600 hover:bg-blue-50"
+            }`}
+          >
+            {isCreatingSheet ? (
+              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Sheet className="w-4 h-4" />
+            )}
+          </button>
+
+          <button
+            onClick={onToggle}
+            disabled={isToggling}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              teacher.isActive
+                ? "text-orange-600 hover:bg-orange-50"
+                : "text-green-600 hover:bg-green-50"
+            } disabled:opacity-50`}
+          >
+            {teacher.isActive ? (
+              <><ToggleRight className="w-4 h-4" />Deactivate</>
+            ) : (
+              <><ToggleLeft className="w-4 h-4" />Activate</>
+            )}
+          </button>
+          <button
+            onClick={onDelete}
+            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            title="Delete teacher"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </div>
   );
