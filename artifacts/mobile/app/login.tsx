@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import {
   View,
   Text,
+  Image,
   TextInput,
   TouchableOpacity,
   StyleSheet,
@@ -13,7 +14,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Redirect, useRouter } from "expo-router";
-import { BookOpen, AlertCircle, Mail, Lock, Eye, EyeOff } from "lucide-react-native";
+import { AlertCircle, Mail, Lock, Eye, EyeOff } from "lucide-react-native";
 import { useLogin } from "@workspace/api-client-react";
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
@@ -77,10 +78,13 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.logoArea}>
-          <View style={[styles.logoCircle, { backgroundColor: colors.primary }]}>
-            <BookOpen size={32} color="#fff" />
-          </View>
-          <Text style={[styles.appName, { color: colors.foreground }]}>Student Data App</Text>
+          <Image
+            source={require("../assets/logo.png")}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
+          <Text style={[styles.appName, { color: colors.foreground }]}>Doodhnath Group</Text>
+          <Text style={[styles.tagline, { color: colors.primary }]}>Teachers App</Text>
           <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>Sign in to manage your students</Text>
         </View>
 
@@ -158,9 +162,10 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: { flexGrow: 1, paddingHorizontal: 24, alignItems: "center" },
   logoArea: { alignItems: "center", marginBottom: 40 },
-  logoCircle: { width: 72, height: 72, borderRadius: 20, alignItems: "center", justifyContent: "center", marginBottom: 16 },
-  appName: { fontSize: 26, fontWeight: "700", fontFamily: "Inter_700Bold", marginBottom: 6 },
-  subtitle: { fontSize: 15, fontFamily: "Inter_400Regular" },
+  logoImage: { width: 110, height: 110, marginBottom: 14 },
+  appName: { fontSize: 26, fontWeight: "700", fontFamily: "Inter_700Bold", marginBottom: 2 },
+  tagline: { fontSize: 14, fontFamily: "Inter_600SemiBold", fontWeight: "600", letterSpacing: 0.5, marginBottom: 4 },
+  subtitle: { fontSize: 14, fontFamily: "Inter_400Regular" },
   card: { width: "100%", borderRadius: 16, padding: 24, borderWidth: 1, gap: 16, shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 3 },
   errorBox: { flexDirection: "row", alignItems: "center", gap: 8, padding: 12, borderRadius: 8, borderWidth: 1 },
   errorText: { fontSize: 13, fontFamily: "Inter_400Regular", flex: 1 },
