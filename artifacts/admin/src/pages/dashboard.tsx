@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useListTeachers, useCreateTeacher, useToggleTeacherStatus } from "@workspace/api-client-react";
 import type { Teacher } from "@workspace/api-client-react";
 import { useAuth } from "@/context/AuthContext";
@@ -7,6 +7,7 @@ import {
   BookOpen, Users, Plus, LogOut, ToggleLeft, ToggleRight,
   Copy, Check, AlertCircle, X, Mail, Phone, CheckCircle, XCircle,
   ExternalLink, RefreshCw, Trash2, AlertTriangle, Sheet, Key, Eye, EyeOff,
+  Link2, ClipboardCopy,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -26,14 +27,31 @@ export default function DashboardPage() {
   const [copiedPwd, setCopiedPwd] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Teacher | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showSheetSetup, setShowSheetSetup] = useState(false);
 
   // Per-teacher sheet creation state
   const [sheetCreating, setSheetCreating] = useState<Record<string, boolean>>({});
   const [sheetFailed, setSheetFailed] = useState<Record<string, string>>({});
 
+  // Master sheet setup state
+  const [masterSheetInfo, setMasterSheetInfo] = useState<{ masterSheetUrl: string | null; serviceAccountEmail: string | null } | null>(null);
+  const [sheetUrlInput, setSheetUrlInput] = useState("");
+  const [savingMasterSheet, setSavingMasterSheet] = useState(false);
+  const [copiedEmail, setCopiedEmail] = useState(false);
+
   const teachers = data?.teachers ?? [];
   const activeCount = teachers.filter((t) => t.isActive).length;
-  const masterSheetUrl = (data as any)?.masterSheetUrl ?? null;
+  const masterSheetUrl = (data as any)?.masterSheetUrl ?? masterSheetInfo?.masterSheetUrl ?? null;
+
+  useEffect(() => {
+    if (!token) return;
+    fetch("/api/admin/teachers/master-sheet", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((d) => setMasterSheetInfo(d))
+      .catch(() => {});
+  }, [token]);
 
   function validateForm() {
     const errs: Record<string, string> = {};
@@ -122,11 +140,47 @@ export default function DashboardPage() {
     }
   }
 
+  async function handleSaveMasterSheet(e: React.FormEvent) {
+    e.preventDefault();
+    if (!sheetUrlInput.trim()) return;
+    setSavingMasterSheet(true);
+    try {
+      const res = await fetch("/api/admin/teachers/master-sheet", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+        body: JSON.stringify({ spreadsheetUrl: sheetUrlInput.trim() }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed");
+      setMasterSheetInfo((m) => ({ ...m!, masterSheetUrl: body.spreadsheetUrl }));
+      qc.invalidateQueries({ queryKey: ["listTeachers"] });
+      setSheetUrlInput("");
+      setShowSheetSetup(false);
+      toast({ title: "Master Sheet Configured!", description: "Teachers can now have their sheet tabs created." });
+    } catch (e: any) {
+      toast({ title: "Failed to save", description: e?.message ?? "Check the URL and try again", variant: "destructive" });
+    } finally {
+      setSavingMasterSheet(false);
+    }
+  }
+
   function copyPassword() {
     if (newTeacher?.tempPassword) {
       navigator.clipboard.writeText(newTeacher.tempPassword);
       setCopiedPwd(true);
       setTimeout(() => setCopiedPwd(false), 2000);
+    }
+  }
+
+  function copyServiceEmail() {
+    const email = masterSheetInfo?.serviceAccountEmail;
+    if (email) {
+      navigator.clipboard.writeText(email);
+      setCopiedEmail(true);
+      setTimeout(() => setCopiedEmail(false), 2000);
     }
   }
 
@@ -158,27 +212,57 @@ export default function DashboardPage() {
       </header>
 
       <main className="max-w-6xl mx-auto px-6 py-8 space-y-6">
-        {/* Master Sheet banner */}
-        {masterSheetUrl && (
+        {/* Master Sheet banner — configured */}
+        {masterSheetUrl ? (
           <div className="flex items-center justify-between gap-4 bg-green-50 border border-green-200 rounded-2xl px-5 py-4">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 bg-green-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                <ExternalLink className="w-4 h-4 text-white" />
+                <Sheet className="w-4 h-4 text-white" />
               </div>
               <div>
                 <p className="text-sm font-semibold text-green-900">Master Google Sheet</p>
                 <p className="text-xs text-green-700">All teachers have their own tab — one sheet for everything</p>
               </div>
             </div>
-            <a
-              href={masterSheetUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
+            <div className="flex gap-2 flex-shrink-0">
+              <button
+                onClick={() => setShowSheetSetup(true)}
+                className="px-3 py-1.5 text-xs text-green-700 hover:bg-green-100 rounded-lg transition-colors"
+              >
+                Change
+              </button>
+              <a
+                href={masterSheetUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                Open Sheet
+              </a>
+            </div>
+          </div>
+        ) : (
+          /* Master Sheet not configured — show setup prompt */
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4">
+            <div className="flex items-start gap-3 mb-3">
+              <div className="w-9 h-9 bg-amber-500 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Sheet className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-amber-900">Google Sheet Not Configured</p>
+                <p className="text-xs text-amber-700 mt-0.5">
+                  You need to set up the master Google Sheet before creating teacher tabs.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowSheetSetup(true)}
+              className="flex items-center gap-1.5 px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 transition-colors"
             >
-              <ExternalLink className="w-3.5 h-3.5" />
-              Open Sheet
-            </a>
+              <Link2 className="w-3.5 h-3.5" />
+              Setup Google Sheet
+            </button>
           </div>
         )}
 
@@ -241,6 +325,69 @@ export default function DashboardPage() {
           )}
         </div>
       </main>
+
+      {/* Google Sheet Setup Modal */}
+      {showSheetSetup && (
+        <Modal title="Configure Master Google Sheet" onClose={() => { setShowSheetSetup(false); setSheetUrlInput(""); }}>
+          <div className="space-y-5">
+            {/* Step 1 */}
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Step 1 — Create a Google Sheet</p>
+              <p className="text-sm text-gray-600">
+                Go to <a href="https://sheets.google.com" target="_blank" rel="noreferrer" className="text-blue-600 underline">sheets.google.com</a> and create a new blank spreadsheet.
+              </p>
+            </div>
+
+            {/* Step 2 */}
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Step 2 — Share with Service Account</p>
+              <p className="text-sm text-gray-600">Click <strong>Share</strong> and add this email as an <strong>Editor</strong>:</p>
+              <div className="flex items-center gap-2 p-3 bg-gray-100 rounded-xl border border-gray-200">
+                <code className="flex-1 text-xs font-mono text-gray-800 break-all">
+                  {masterSheetInfo?.serviceAccountEmail ?? "Loading…"}
+                </code>
+                {masterSheetInfo?.serviceAccountEmail && (
+                  <button
+                    onClick={copyServiceEmail}
+                    className="flex-shrink-0 p-1.5 hover:bg-gray-200 rounded-lg transition-colors"
+                  >
+                    {copiedEmail ? <Check className="w-3.5 h-3.5 text-green-600" /> : <ClipboardCopy className="w-3.5 h-3.5 text-gray-500" />}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Step 3 */}
+            <form onSubmit={handleSaveMasterSheet} className="space-y-2">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Step 3 — Paste the Sheet URL</p>
+              <input
+                value={sheetUrlInput}
+                onChange={(e) => setSheetUrlInput(e.target.value)}
+                placeholder="https://docs.google.com/spreadsheets/d/…"
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => { setShowSheetSetup(false); setSheetUrlInput(""); }}
+                  className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingMasterSheet || !sheetUrlInput.trim()}
+                  className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+                >
+                  {savingMasterSheet ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : "Save & Connect"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </Modal>
+      )}
 
       {/* Create teacher modal */}
       {showCreate && (
@@ -405,6 +552,7 @@ function TeacherRow({
 
   const hasSheet = !!teacher.googleSheetUrl;
   const hasFailed = !!sheetError;
+  const hasPasswordData = !!(teacher.initialPassword || teacher.customPassword);
 
   return (
     <div className="px-6 py-4 hover:bg-gray-50 transition-colors">
@@ -436,38 +584,39 @@ function TeacherRow({
             )}
           </div>
 
-          {/* Password row */}
-          {(teacher.initialPassword || teacher.customPassword) && (
-            <div className="mt-1.5 flex items-center gap-2 flex-wrap">
-              <button
-                onClick={() => setShowPasswords((v) => !v)}
-                className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors"
-                title={showPasswords ? "Hide passwords" : "Show passwords"}
-              >
-                <Key className="w-3 h-3" />
-                {showPasswords ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                <span>{showPasswords ? "Hide passwords" : "Show passwords"}</span>
-              </button>
-              {showPasswords && (
-                <>
-                  {teacher.initialPassword && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 border border-amber-200 rounded text-xs font-mono text-amber-800">
-                      Initial: <strong>{teacher.initialPassword}</strong>
-                    </span>
-                  )}
+          {/* Password row — always visible */}
+          <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setShowPasswords((v) => !v)}
+              className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <Key className="w-3 h-3" />
+              {showPasswords ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+              <span>{showPasswords ? "Hide" : "Passwords"}</span>
+            </button>
+            {showPasswords && (
+              <>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800">
+                  Initial:{" "}
+                  {hasPasswordData && teacher.initialPassword
+                    ? <strong className="font-mono">{teacher.initialPassword}</strong>
+                    : <span className="italic text-amber-500">not saved</span>
+                  }
+                </span>
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs border ${
+                  teacher.customPassword
+                    ? "bg-blue-50 border-blue-200 text-blue-800"
+                    : "bg-gray-50 border-gray-200 text-gray-500"
+                }`}>
                   {teacher.customPassword ? (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 border border-blue-200 rounded text-xs font-mono text-blue-800">
-                      Changed to: <strong>{teacher.customPassword}</strong>
-                    </span>
+                    <>Changed to: <strong className="font-mono">{teacher.customPassword}</strong></>
                   ) : (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-50 border border-gray-200 rounded text-xs text-gray-500">
-                      Not changed yet
-                    </span>
+                    "Not changed yet"
                   )}
-                </>
-              )}
-            </div>
-          )}
+                </span>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Action buttons */}
@@ -478,8 +627,8 @@ function TeacherRow({
             disabled={isCreatingSheet}
             title={
               hasSheet ? "Open Google Sheet" :
-              hasFailed ? `Failed: ${sheetError} — tap to retry` :
-              "Create Google Sheet"
+              hasFailed ? `Failed — tap to retry` :
+              "Create Google Sheet tab"
             }
             className={`p-2 rounded-lg transition-colors disabled:opacity-50 ${
               hasSheet

@@ -3,12 +3,74 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { Teacher } from "../models/Teacher";
 import { Student } from "../models/Student";
+import { Config } from "../models/Config";
 import { requireAuth, requireSuperAdmin } from "../middlewares/auth";
 import { addTeacherTab, getMasterSheetUrl } from "../lib/sheets";
 import { logger } from "../lib/logger";
+import { google } from "googleapis";
 
 const router = Router();
 router.use(requireAuth, requireSuperAdmin);
+
+// Get master sheet info + service account email
+router.get("/master-sheet", async (_req, res) => {
+  const masterSheetUrl = await getMasterSheetUrl().catch(() => null);
+  let serviceAccountEmail: string | null = null;
+  try {
+    const b64 = process.env["GOOGLE_SERVICE_ACCOUNT_JSON"];
+    if (b64) {
+      const creds = JSON.parse(Buffer.from(b64, "base64").toString("utf-8"));
+      serviceAccountEmail = creds.client_email ?? null;
+    }
+  } catch {}
+  res.json({ masterSheetUrl, serviceAccountEmail });
+});
+
+// Manually set master sheet by pasting a Google Sheets URL or ID
+router.post("/master-sheet", async (req, res) => {
+  const { spreadsheetUrl } = req.body;
+  if (!spreadsheetUrl) {
+    res.status(400).json({ error: "spreadsheetUrl is required" });
+    return;
+  }
+  // Extract spreadsheet ID from URL or use as-is
+  const match = String(spreadsheetUrl).match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+  const spreadsheetId = match ? match[1] : String(spreadsheetUrl).trim();
+  if (!spreadsheetId) {
+    res.status(400).json({ error: "Could not extract spreadsheet ID from URL" });
+    return;
+  }
+
+  // Verify service account has access by reading the sheet
+  try {
+    const b64 = process.env["GOOGLE_SERVICE_ACCOUNT_JSON"];
+    if (!b64) throw new Error("Service account not configured");
+    const creds = JSON.parse(Buffer.from(b64, "base64").toString("utf-8"));
+    const auth = new google.auth.GoogleAuth({
+      credentials: creds,
+      scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+    });
+    const sheets = google.sheets({ version: "v4", auth });
+    await sheets.spreadsheets.get({ spreadsheetId });
+  } catch (e: any) {
+    const msg = e?.response?.data?.error?.message ?? e?.message ?? "Cannot access sheet";
+    res.status(400).json({
+      error: `Cannot access spreadsheet: ${msg}. Make sure you have shared the sheet with the service account email (Editor access).`,
+    });
+    return;
+  }
+
+  await Config.findOneAndUpdate(
+    { key: "masterSheetId" },
+    { value: spreadsheetId },
+    { upsert: true }
+  );
+  logger.info({ spreadsheetId }, "Master sheet ID manually set");
+  res.json({
+    spreadsheetId,
+    spreadsheetUrl: `https://docs.google.com/spreadsheets/d/${spreadsheetId}`,
+  });
+});
 
 router.get("/", async (_req, res) => {
   const teachers = await Teacher.find({ role: "teacher" }).lean();
