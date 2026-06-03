@@ -1,12 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-# Enable pnpm via corepack (built into Node.js — no global install needed)
-corepack enable pnpm
-corepack prepare pnpm@10.26.1 --activate
-
-# Install all workspace dependencies
-pnpm install --frozen-lockfile
-
-# Build the API server
-pnpm --filter @workspace/api-server run build
+# Run pnpm via npx — no global install or corepack needed
+# This downloads the exact version to npx cache without touching system dirs
+npx --yes pnpm@10.26.1 install --frozen-lockfile
+npx --yes pnpm@10.26.1 --filter @workspace/api-server run build
