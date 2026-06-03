@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: student-data-manager-api
+    runtime: node
+    buildCommand: bash scripts/render-build.sh
+    startCommand: node --enable-source-maps artifacts/api-server/dist/index.mjs
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: GOOGLE_SERVICE_ACCOUNT_JSON
+        sync: false
+      - key: SUPER_ADMIN_EMAIL
+        sync: false
+      - key: SUPER_ADMIN_PASSWORD
+        sync: false
+      - key: SHEET_ADMIN_EMAIL
+        sync: false
