@@ -123,6 +123,10 @@ export interface Student {
   subjects?: string;
   address?: string;
   aadhaarNumber?: string;
+  addedByName?: string;
+  addedById?: string;
+  updatedByName?: string;
+  updatedById?: string;
   isPendingSync?: boolean;
   googleSheetRowIndex?: number | null;
   files?: StudentFiles;
