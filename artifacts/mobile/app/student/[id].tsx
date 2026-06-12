@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   AlertCircle, Pencil, Download, FileText, File, Trash2,
-  User, Calendar, Phone, Mail, Award,
+  User, Calendar, Phone, Mail, Award, UserCheck, Clock,
 } from "lucide-react-native";
 import { useGetStudent, useDeleteStudent } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
@@ -215,6 +215,24 @@ export default function StudentDetailScreen() {
           </View>
         </View>
 
+        {/* Record Info */}
+        {(student.addedByName || student.updatedByName) ? (
+          <View style={styles.section}>
+            <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>RECORD INFO</Text>
+            <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              {student.addedByName ? (
+                <InfoRow icon={UserCheck} label="Added By" value={student.addedByName} colors={colors} valueColor="#16a34a" />
+              ) : null}
+              {student.addedByName && student.updatedByName && student.updatedByName !== student.addedByName ? (
+                <Divider colors={colors} />
+              ) : null}
+              {student.updatedByName && student.updatedByName !== student.addedByName ? (
+                <InfoRow icon={Clock} label="Last Updated By" value={student.updatedByName} colors={colors} valueColor="#2563eb" />
+              ) : null}
+            </View>
+          </View>
+        ) : null}
+
         {/* Delete */}
         <TouchableOpacity
           style={[styles.deleteBtn, { backgroundColor: "#FEE2E2", borderColor: "#FECACA" }]}
@@ -228,18 +246,19 @@ export default function StudentDetailScreen() {
   );
 }
 
-function InfoRow({ icon: Icon, label, value, colors }: {
+function InfoRow({ icon: Icon, label, value, colors, valueColor }: {
   icon: React.ComponentType<{ size: number; color: string }>;
   label: string;
   value: string;
   colors: any;
+  valueColor?: string;
 }) {
   return (
     <View style={styles.infoRow}>
       <Icon size={15} color={colors.mutedForeground} />
       <View style={styles.infoText}>
         <Text style={[styles.infoLabel, { color: colors.mutedForeground }]}>{label}</Text>
-        <Text style={[styles.infoValue, { color: colors.foreground }]}>{value}</Text>
+        <Text style={[styles.infoValue, { color: valueColor ?? colors.foreground }]}>{value}</Text>
       </View>
     </View>
   );
