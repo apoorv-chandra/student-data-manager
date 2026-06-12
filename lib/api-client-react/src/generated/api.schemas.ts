@@ -118,6 +118,11 @@ export interface Student {
   twelfthPassYear: string;
   mobile: string;
   email: string;
+  department?: string;
+  course?: string;
+  subjects?: string;
+  address?: string;
+  aadhaarNumber?: string;
   isPendingSync?: boolean;
   googleSheetRowIndex?: number | null;
   files?: StudentFiles;
@@ -141,6 +146,11 @@ export interface CreateStudentRequest {
   twelfthPassYear: string;
   mobile: string;
   email: string;
+  department?: string;
+  course?: string;
+  subjects?: string;
+  address?: string;
+  aadhaarNumber?: string;
   photo?: string;
   signature?: string;
   tenthMarksheet?: string;
@@ -163,6 +173,11 @@ export interface UpdateStudentRequest {
   twelfthPassYear?: string;
   mobile?: string;
   email?: string;
+  department?: string;
+  course?: string;
+  subjects?: string;
+  address?: string;
+  aadhaarNumber?: string;
   photo?: string;
   signature?: string;
   tenthMarksheet?: string;
