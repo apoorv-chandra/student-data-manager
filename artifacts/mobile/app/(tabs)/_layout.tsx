@@ -2,11 +2,13 @@ import { Tabs, useRouter } from "expo-router";
 import { Users, Settings } from "lucide-react-native";
 import React, { useEffect } from "react";
 import { Platform } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 
 export default function TabLayout() {
   const colors = useColors();
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const router = useRouter();
 
@@ -15,6 +17,8 @@ export default function TabLayout() {
       router.replace("/login");
     }
   }, [user]);
+
+  const bottomInset = insets.bottom ?? 0;
 
   return (
     <Tabs
@@ -25,16 +29,16 @@ export default function TabLayout() {
           backgroundColor: colors.card,
           borderTopColor: colors.border,
           borderTopWidth: 1,
-          height: Platform.OS === "ios" ? 84 : 60,
-          paddingBottom: Platform.OS === "ios" ? 28 : 6,
-          paddingTop: 4,
+          height: Platform.OS === "ios" ? 49 + bottomInset : 56 + bottomInset,
+          paddingBottom: Platform.OS === "ios" ? bottomInset : bottomInset + 6,
+          paddingTop: 6,
         },
         headerShown: false,
       }}
     >
       <Tabs.Screen
         name="index"
-        options={{ href: null }}
+        options={{ href: null, tabBarButton: () => null }}
       />
       <Tabs.Screen
         name="students"
