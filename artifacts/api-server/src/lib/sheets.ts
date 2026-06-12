@@ -36,7 +36,7 @@ const FILE_LABELS: Record<string, string> = {
 const HEADERS = [
   "S.No", "Name", "Father's Name", "Date of Birth",
   "Address", "Aadhaar Number", "Mobile", "Email",
-  "Department", "Course",
+  "Department", "Course", "Subjects",
   "10th Pass Year", "10th School", "10th Board",
   "12th Pass Year", "12th School", "12th Board",
   ...FILE_SLOTS.map((s) => FILE_LABELS[s]),
@@ -74,6 +74,7 @@ function studentToRow(student: any, baseUrl: string): any[] {
     student.email ?? "",
     student.department ?? "",
     student.course ?? "",
+    student.subjects ?? "",
     student.tenthPassYear ?? "",
     student.tenthSchoolName ?? "",
     student.tenthBoard ?? "",
