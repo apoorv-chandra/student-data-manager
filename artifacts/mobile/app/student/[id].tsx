@@ -78,29 +78,9 @@ export default function StudentDetailScreen() {
           text: "Delete",
           style: "destructive",
           onPress: async () => {
-            qc.setQueriesData({ queryKey: ["students"] }, (old: any) => {
-              if (!old) return old;
-              if (Array.isArray(old)) return old.filter((s: any) => s.id !== id);
-              if (old.pages) {
-                return {
-                  ...old,
-                  pages: old.pages.map((page: any) => ({
-                    ...page,
-                    students: (page.students ?? []).filter((s: any) => s.id !== id),
-                    total: Math.max(0, (page.total ?? 1) - 1),
-                  })),
-                };
-              }
-              return old;
-            });
+            qc.invalidateQueries({ queryKey: ["students"] });
             router.back();
-            deleteMutation.mutate(
-              { id: id ?? "" },
-              {
-                onSuccess: () => { qc.invalidateQueries({ queryKey: ["students"] }); },
-                onError: () => { qc.invalidateQueries({ queryKey: ["students"] }); },
-              }
-            );
+            deleteMutation.mutate({ id: id ?? "" });
           },
         },
       ]
