@@ -506,6 +506,16 @@ components:
           type: string
         email:
           type: string
+        department:
+          type: string
+        course:
+          type: string
+        subjects:
+          type: string
+        address:
+          type: string
+        aadhaarNumber:
+          type: string
         isPendingSync:
           type: boolean
         googleSheetRowIndex:
@@ -619,6 +629,16 @@ components:
           type: string
         aadhaarBack:
           type: string
+        department:
+          type: string
+        course:
+          type: string
+        subjects:
+          type: string
+        address:
+          type: string
+        aadhaarNumber:
+          type: string
       required: [name, fathersName, dateOfBirth, tenthPassYear, twelfthPassYear, mobile, email]
 
     UpdateStudentRequest:
@@ -661,6 +681,16 @@ components:
         aadhaarFront:
           type: string
         aadhaarBack:
+          type: string
+        department:
+          type: string
+        course:
+          type: string
+        subjects:
+          type: string
+        address:
+          type: string
+        aadhaarNumber:
           type: string
 
     TeacherSettings:
