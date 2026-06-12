@@ -95,8 +95,6 @@ router.get("/", async (_req, res) => {
       googleSheetUrl: t.googleSheetUrl ?? null,
       studentCount: countMap[t._id.toString()] ?? 0,
       createdAt: t.createdAt,
-      initialPassword: (t as any).initialPassword ?? null,
-      customPassword: (t as any).customPassword ?? null,
       requiresPasswordChange: t.requiresPasswordChange ?? true,
     })),
     total: teachers.length,
@@ -255,12 +253,12 @@ router.patch("/:id/status", async (req, res) => {
     id: teacher._id.toString(),
     name: teacher.name,
     email: teacher.email,
-    mobile: teacher.mobile,
     role: teacher.role,
     isActive: teacher.isActive,
     googleSheetUrl: teacher.googleSheetUrl ?? null,
     studentCount,
     createdAt: teacher.createdAt,
+    requiresPasswordChange: teacher.requiresPasswordChange ?? true,
   });
 });
 
