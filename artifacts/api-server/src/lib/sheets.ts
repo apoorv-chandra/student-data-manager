@@ -5,9 +5,26 @@ import { Config } from "../models/Config";
 const MASTER_SHEET_ID_KEY = "masterSheetId";
 
 function getAuth() {
-  const b64 = process.env["GOOGLE_SERVICE_ACCOUNT_JSON"];
-  if (!b64) throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON not set");
-  const creds = JSON.parse(Buffer.from(b64, "base64").toString("utf-8"));
+  const raw = process.env["GOOGLE_SERVICE_ACCOUNT_JSON"];
+  if (!raw) throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON not set");
+
+  let jsonStr: string;
+  // Support both raw JSON and base64-encoded JSON
+  const trimmed = raw.trim();
+  if (trimmed.startsWith("{")) {
+    jsonStr = trimmed;
+  } else {
+    jsonStr = Buffer.from(trimmed, "base64").toString("utf-8");
+  }
+
+  const creds = JSON.parse(jsonStr);
+
+  // Normalize private key: fix double-escaped newlines that happen when
+  // storing JSON in env vars (\\n → \n → actual newline)
+  if (creds.private_key && typeof creds.private_key === "string") {
+    creds.private_key = creds.private_key.replace(/\\n/g, "\n");
+  }
+
   return new google.auth.GoogleAuth({
     credentials: creds,
     scopes: [
