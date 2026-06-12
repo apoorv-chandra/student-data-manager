@@ -78,6 +78,11 @@ export default function StudentsScreen() {
           <Text style={[styles.studentName, { color: colors.foreground }]} numberOfLines={1}>
             {item.name}
           </Text>
+          {item.addedByName ? (
+            <Text style={[styles.studentSub, { color: "#16a34a" }]} numberOfLines={1}>
+              Added by: {item.addedByName}
+            </Text>
+          ) : null}
           <Text style={[styles.studentSub, { color: colors.mutedForeground }]} numberOfLines={1}>
             Father: {item.fathersName}
           </Text>
