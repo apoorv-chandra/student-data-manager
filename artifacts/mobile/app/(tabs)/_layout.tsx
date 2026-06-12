@@ -38,7 +38,7 @@ export default function TabLayout() {
     >
       <Tabs.Screen
         name="index"
-        options={{ href: null, tabBarButton: () => null }}
+        options={{ href: null }}
       />
       <Tabs.Screen
         name="students"
