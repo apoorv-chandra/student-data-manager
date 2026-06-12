@@ -9,7 +9,7 @@ router.get("/healthz", (_req, res) => {
 });
 
 // Public diagnostic — checks Google service account key format without revealing it
-router.get("/check-google-creds", (_req, res) => {
+router.get("/check-google-creds", async (_req, res) => {
   const raw = process.env["GOOGLE_SERVICE_ACCOUNT_JSON"];
   if (!raw || !raw.trim()) {
     res.status(500).json({ ok: false, error: "GOOGLE_SERVICE_ACCOUNT_JSON is not set or empty" });
