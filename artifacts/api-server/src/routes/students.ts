@@ -66,6 +66,7 @@ const studentSchema = z.object({
   twelfthBoard: z.string().optional().default(""),
   department: z.string().optional().default(""),
   course: z.string().optional().default(""),
+  subjects: z.string().optional().default(""),
 });
 
 function getBaseUrl(req: any): string {
