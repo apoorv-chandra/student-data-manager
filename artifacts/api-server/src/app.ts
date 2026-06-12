@@ -1,6 +1,7 @@
 import express, { type Express } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
+import path from "path";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { connectDB } from "./lib/mongoose";
@@ -32,5 +33,14 @@ connectDB().catch((err) => {
 });
 
 app.use("/api", router);
+
+// Serve admin panel static files (built to artifacts/admin/dist/public)
+const adminDist = path.resolve(__dirname, "../../admin/dist/public");
+app.use(express.static(adminDist));
+
+// SPA fallback — serve index.html for all non-API routes
+app.get("*", (_req, res) => {
+  res.sendFile(path.join(adminDist, "index.html"));
+});
 
 export default app;
