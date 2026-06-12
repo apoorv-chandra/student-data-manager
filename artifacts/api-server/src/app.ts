@@ -38,8 +38,8 @@ app.use("/api", router);
 const adminDist = path.resolve(__dirname, "../../admin/dist/public");
 app.use(express.static(adminDist));
 
-// SPA fallback — serve index.html for all non-API routes
-app.get("*", (_req, res) => {
+// SPA fallback — serve index.html for all non-API routes (Express 5 wildcard syntax)
+app.get("/{*path}", (_req, res) => {
   res.sendFile(path.join(adminDist, "index.html"));
 });
 
