@@ -32,6 +32,7 @@ const studentSchema = new mongoose.Schema(
     twelfthBoard: { type: String, default: "" },
     department: { type: String, default: "" },
     course: { type: String, default: "" },
+    subjects: { type: String, default: "" },
     googleSheetRowIndex: { type: Number, default: null },
     files: {
       photo: { type: studentFileSchema, default: null },
