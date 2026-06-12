@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Phone, Grid2X2, ExternalLink, LogOut, ChevronRight, RefreshCw } from "lucide-react-native";
+import { Phone, Grid2X2, ExternalLink, LogOut, ChevronRight, RefreshCw, RotateCcw } from "lucide-react-native";
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 import { useGetSettings } from "@workspace/api-client-react";
@@ -24,7 +24,14 @@ export default function SettingsScreen() {
   const qc = useQueryClient();
   const [creatingSheet, setCreatingSheet] = useState(false);
 
-  const { data: settings } = useGetSettings();
+  const [refreshing, setRefreshing] = useState(false);
+  const { data: settings, refetch: refetchSettings } = useGetSettings();
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    await refetchSettings();
+    setRefreshing(false);
+  }
 
   async function handleCreateSheet() {
     setCreatingSheet(true);
@@ -65,10 +72,22 @@ export default function SettingsScreen() {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: colors.background }}
-      contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
+      contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 20) + 80 }}
     >
       <View style={[styles.header, { paddingTop: topInset + 12, backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <Text style={[styles.headerTitle, { color: colors.foreground }]}>Settings</Text>
+        <View style={styles.headerRow}>
+          <Text style={[styles.headerTitle, { color: colors.foreground }]}>Settings</Text>
+          <TouchableOpacity
+            style={[styles.refreshBtn, { backgroundColor: colors.muted }]}
+            onPress={handleRefresh}
+            disabled={refreshing}
+          >
+            {refreshing
+              ? <ActivityIndicator size="small" color={colors.mutedForeground} />
+              : <RotateCcw size={18} color={colors.foreground} />
+            }
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.content}>
@@ -169,7 +188,9 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   header: { paddingHorizontal: 16, paddingBottom: 16, borderBottomWidth: 1 },
+  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   headerTitle: { fontSize: 26, fontWeight: "700", fontFamily: "Inter_700Bold" },
+  refreshBtn: { width: 38, height: 38, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   content: { padding: 16, gap: 24 },
   section: { gap: 8 },
   sectionLabel: { fontSize: 11, fontFamily: "Inter_600SemiBold", fontWeight: "600", letterSpacing: 0.8, paddingLeft: 4 },
