@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Search, Plus, Paperclip, ChevronRight, ChevronLeft, WifiOff, Users } from "lucide-react-native";
+import { Search, Plus, Paperclip, ChevronRight, ChevronLeft, WifiOff, Users, RefreshCw } from "lucide-react-native";
 import { useListStudents } from "@workspace/api-client-react";
 import type { Student } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
@@ -110,13 +110,22 @@ export default function StudentsScreen() {
               <Text style={[styles.headerSub, { color: colors.mutedForeground }]}>{total} total</Text>
             )}
           </View>
-          <TouchableOpacity
-            style={[styles.addBtn, { backgroundColor: colors.primary }]}
-            onPress={() => router.push("/student/add")}
-            testID="add-student-btn"
-          >
-            <Plus size={20} color="#fff" />
-          </TouchableOpacity>
+          <View style={styles.headerButtons}>
+            <TouchableOpacity
+              style={[styles.iconBtn, { backgroundColor: colors.muted }]}
+              onPress={onRefresh}
+              disabled={refreshing}
+            >
+              <RefreshCw size={18} color={colors.foreground} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.addBtn, { backgroundColor: colors.primary }]}
+              onPress={() => router.push("/student/add")}
+              testID="add-student-btn"
+            >
+              <Plus size={20} color="#fff" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={[styles.searchBar, { backgroundColor: colors.muted, borderColor: colors.border }]}>
@@ -154,7 +163,7 @@ export default function StudentsScreen() {
           contentContainerStyle={[
             styles.list,
             students.length === 0 && styles.listEmpty,
-            { paddingBottom: insets.bottom + 80 },
+            { paddingBottom: Math.max(insets.bottom, 20) + 80 },
           ]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
           scrollEnabled={!!students.length}
@@ -204,7 +213,9 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   headerTitle: { fontSize: 26, fontWeight: "700", fontFamily: "Inter_700Bold" },
   headerSub: { fontSize: 13, fontFamily: "Inter_400Regular", marginTop: 2 },
-  addBtn: { width: 42, height: 42, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  headerButtons: { flexDirection: "row", alignItems: "center", gap: 8 },
+  iconBtn: { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  addBtn: { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   searchBar: { flexDirection: "row", alignItems: "center", borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, height: 42, gap: 8 },
   searchInput: { flex: 1, fontSize: 15, fontFamily: "Inter_400Regular" },
   list: { paddingHorizontal: 16, paddingTop: 12, gap: 10 },
