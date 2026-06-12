@@ -33,6 +33,10 @@ const studentSchema = new mongoose.Schema(
     department: { type: String, default: "" },
     course: { type: String, default: "" },
     subjects: { type: String, default: "" },
+    addedByName: { type: String, default: "" },
+    addedById: { type: mongoose.Schema.Types.ObjectId, ref: "Teacher", default: null },
+    updatedByName: { type: String, default: "" },
+    updatedById: { type: mongoose.Schema.Types.ObjectId, ref: "Teacher", default: null },
     googleSheetRowIndex: { type: Number, default: null },
     files: {
       photo: { type: studentFileSchema, default: null },
