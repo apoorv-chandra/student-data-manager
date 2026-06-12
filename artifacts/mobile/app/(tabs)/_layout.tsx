@@ -25,8 +25,9 @@ export default function TabLayout() {
           backgroundColor: colors.card,
           borderTopColor: colors.border,
           borderTopWidth: 1,
-          height: Platform.OS === "ios" ? 84 : 64,
-          paddingBottom: Platform.OS === "ios" ? 28 : 8,
+          height: Platform.OS === "ios" ? 84 : 60,
+          paddingBottom: Platform.OS === "ios" ? 28 : 6,
+          paddingTop: 4,
         },
         headerShown: false,
       }}
