@@ -141,6 +141,10 @@ router.post(
       teacherId: user._id,
       ...parsed.data,
       files: processedFiles,
+      addedByName: user.name,
+      addedById: user._id,
+      updatedByName: user.name,
+      updatedById: user._id,
     });
 
     let teacher = await Teacher.findById(user._id);
@@ -204,7 +208,7 @@ router.patch(
       "name", "fathersName", "dateOfBirth", "address", "aadhaarNumber",
       "mobile", "email", "tenthPassYear", "tenthSchoolName", "tenthBoard",
       "twelfthPassYear", "twelfthSchoolName", "twelfthBoard",
-      "department", "course",
+      "department", "course", "subjects",
     ];
     const textFields: any = {};
     for (const key of textKeys) {
@@ -230,7 +234,12 @@ router.patch(
       }
     }
 
-    const updateData: any = { ...textFields, ...processedFiles };
+    const updateData: any = {
+      ...textFields,
+      ...processedFiles,
+      updatedByName: user.name,
+      updatedById: user._id,
+    };
     const updated = await Student.findByIdAndUpdate(student._id, { $set: updateData }, { new: true }).lean();
 
     const teacher = await Teacher.findById(user._id);
