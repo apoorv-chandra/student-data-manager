@@ -32,6 +32,23 @@ router.get("/check-google-creds", (_req, res) => {
     const literalBackslashN = (rawKey.match(/\\n/g) ?? []).length;
     const fixedKey = rawKey.replace(/\\n/g, "\n");
     const realNewlines = (fixedKey.match(/\n/g) ?? []).length;
+    // Actually try to get a Google access token
+    let authTest: any = { attempted: false };
+    try {
+      const { google } = await import("googleapis");
+      creds.private_key = fixedKey;
+      const auth = new google.auth.GoogleAuth({
+        credentials: creds,
+        scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+      });
+      const client = await auth.getClient();
+      const tokenResp = await (client as any).getAccessToken();
+      authTest = { ok: true, token_obtained: !!tokenResp?.token };
+    } catch (authErr: any) {
+      const googleDetail = authErr?.response?.data ?? authErr?.message ?? String(authErr);
+      authTest = { ok: false, error: typeof googleDetail === "string" ? googleDetail : JSON.stringify(googleDetail) };
+    }
+
     res.json({
       ok: true,
       encoding,
@@ -44,6 +61,7 @@ router.get("/check-google-creds", (_req, res) => {
       private_key_real_newlines: realNewlines,
       private_key_literal_slash_n_before_fix: literalBackslashN,
       private_key_length: fixedKey.length,
+      google_auth_test: authTest,
     });
   } catch (e: any) {
     res.status(500).json({ ok: false, error: `Parse error: ${e?.message}` });
