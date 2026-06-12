@@ -50,7 +50,7 @@ interface PickedFile { uri: string; name: string; type: string; }
 interface FormState {
   name: string; fathersName: string; dateOfBirth: string;
   address: string; aadhaarNumber: string; mobile: string; email: string;
-  department: string; course: string;
+  department: string; course: string; subjects: string;
   tenthPassYear: string; tenthSchoolName: string; tenthBoard: string;
   twelfthPassYear: string; twelfthSchoolName: string; twelfthBoard: string;
 }
@@ -168,7 +168,7 @@ export default function EditStudentScreen() {
   const [form, setFormState] = useState<FormState>({
     name: "", fathersName: "", dateOfBirth: "", address: "",
     aadhaarNumber: "", mobile: "", email: "",
-    department: "", course: "",
+    department: "", course: "", subjects: "",
     tenthPassYear: "", tenthSchoolName: "", tenthBoard: "",
     twelfthPassYear: "", twelfthSchoolName: "", twelfthBoard: "",
   });
@@ -194,6 +194,7 @@ export default function EditStudentScreen() {
         email: s.email ?? "",
         department: s.department ?? "",
         course: s.course ?? "",
+        subjects: s.subjects ?? "",
         tenthPassYear: s.tenthPassYear ?? "",
         tenthSchoolName: s.tenthSchoolName ?? "",
         tenthBoard: s.tenthBoard ?? "",
@@ -430,6 +431,15 @@ export default function EditStudentScreen() {
           </TouchableOpacity>
           {errors.course ? <Text style={[styles.fieldError, { color: colors.destructive }]}>{errors.course}</Text> : null}
         </View>
+        <Div colors={colors} />
+        <FormField
+          label="Subjects"
+          value={form.subjects}
+          onChangeText={(v) => setField("subjects", v)}
+          error={errors.subjects}
+          placeholder="e.g. Math, Physics, Chemistry"
+          colors={colors}
+        />
       </View>
 
       <View style={{ height: 24 }} />
